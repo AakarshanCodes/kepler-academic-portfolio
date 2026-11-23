@@ -735,6 +735,15 @@
                     return;
                 }
             } catch (e) { }
+            try {
+                const staticRes = await fetch('curriculum_data.json');
+                if (staticRes.ok) {
+                    academicData = await staticRes.json();
+                    localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
+                    if (typeof renderActiveTab === 'function') renderActiveTab();
+                    return;
+                }
+            } catch (e) { }
             const saved = localStorage.getItem("kepler_academic_data");
             if (saved) {
                 try {

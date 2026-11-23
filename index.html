@@ -1035,6 +1035,12 @@
                 return;
             }
 
+            // Normalize path so it functions seamlessly across local server and GitHub Pages sub-paths
+            let docUrl = url;
+            if (docUrl.startsWith('/uploads/')) {
+                docUrl = 'uploads/' + docUrl.substring(9);
+            }
+
             const modal = document.getElementById("preview-modal");
             const modalBody = document.getElementById("modal-body");
             const modalTitle = document.getElementById("modal-doc-title");
@@ -1044,17 +1050,17 @@
             const downloadLink = document.getElementById("modal-doc-download-link");
 
             if (modalTitle) modalTitle.innerText = title;
-            if (openLink) openLink.href = url;
+            if (openLink) openLink.href = docUrl;
             if (downloadLink) {
-                downloadLink.href = url;
-                const fname = url.split('/').pop().split('?')[0] || 'document';
+                downloadLink.href = docUrl;
+                const fname = docUrl.split('/').pop().split('?')[0] || 'document';
                 downloadLink.setAttribute('download', fname);
             }
 
             modal.classList.remove("hidden");
             document.body.classList.add("overflow-hidden");
 
-            const cleanUrl = url.split('?')[0].split('#')[0];
+            const cleanUrl = docUrl.split('?')[0].split('#')[0];
             const ext = cleanUrl.split('.').pop().toLowerCase();
             const fileName = cleanUrl.split('/').pop();
 
@@ -1270,79 +1276,59 @@
         }, { passive: true });
 
         async function syncAcademicData() {
+            let data = null;
             try {
                 const res = await fetch('/api/get-data');
                 if (res.ok) {
-                    const data = await res.json();
-                    for (const cid in data) {
-                        if (COURSES_DATA[cid]) {
-                            if (data[cid].assignments && data[cid].assignments.length > 0) {
-                                COURSES_DATA[cid].assignments = data[cid].assignments.map(a => ({
-                                    title: a.title,
-                                    desc: a.desc,
-                                    status: a.status || 'Graded',
-                                    score: a.score || '',
-                                    url: a.questionUrl || 'https://jmp.sh/TjycFeJg'
-                                }));
-                            }
-                            if (data[cid].projects && data[cid].projects.length > 0) {
-                                const p = data[cid].projects[0];
-                                if (!COURSES_DATA[cid].project) {
-                                    COURSES_DATA[cid].project = {
-                                        sectionTitle: "Mini Project",
-                                        sectionSubtitle: "Coursework Deliverable",
-                                        badge: "Mini Project Deliverable",
-                                        tech: [],
-                                        btnText: "View Mini Project"
-                                    };
-                                }
-                                COURSES_DATA[cid].project.title = p.title;
-                                COURSES_DATA[cid].project.desc = p.desc;
-                                COURSES_DATA[cid].project.subtitle = p.subtitle || COURSES_DATA[cid].project.subtitle;
-                                COURSES_DATA[cid].project.tech = p.tech || COURSES_DATA[cid].project.tech || [];
-                                COURSES_DATA[cid].project.url = p.fileUrl || p.live || COURSES_DATA[cid].project.url;
-                                COURSES_DATA[cid].project.codeUrl = p.codeUrl || null;
-                                COURSES_DATA[cid].project.github = p.github || COURSES_DATA[cid].project.github;
-                            }
-                        }
-                    }
+                    data = await res.json();
+                } else {
+                    const staticRes = await fetch('curriculum_data.json');
+                    if (staticRes.ok) data = await staticRes.json();
                 }
             } catch(e) {
+                try {
+                    const staticRes = await fetch('curriculum_data.json');
+                    if (staticRes.ok) data = await staticRes.json();
+                } catch(err) {}
+            }
+            if (!data) {
                 const saved = localStorage.getItem("kepler_academic_data");
                 if (saved) {
-                    try {
-                        const parsed = JSON.parse(saved);
-                        for (const cid in parsed) {
-                            if (COURSES_DATA[cid] && parsed[cid].assignments && parsed[cid].assignments.length > 0) {
-                                COURSES_DATA[cid].assignments = parsed[cid].assignments.map(a => ({
-                                    title: a.title,
-                                    desc: a.desc,
-                                    status: a.status || 'Graded',
-                                    score: a.score || '',
-                                    url: a.questionUrl || 'https://jmp.sh/TjycFeJg'
-                                }));
-                            }
-                            if (COURSES_DATA[cid] && parsed[cid].projects && parsed[cid].projects.length > 0) {
-                                const p = parsed[cid].projects[0];
-                                if (!COURSES_DATA[cid].project) {
-                                    COURSES_DATA[cid].project = {
-                                        sectionTitle: "Mini Project",
-                                        sectionSubtitle: "Coursework Deliverable",
-                                        badge: "Mini Project Deliverable",
-                                        tech: [],
-                                        btnText: "View Mini Project"
-                                    };
-                                }
-                                COURSES_DATA[cid].project.title = p.title;
-                                COURSES_DATA[cid].project.desc = p.desc;
-                                COURSES_DATA[cid].project.subtitle = p.subtitle || COURSES_DATA[cid].project.subtitle;
-                                COURSES_DATA[cid].project.tech = p.tech || COURSES_DATA[cid].project.tech || [];
-                                COURSES_DATA[cid].project.url = p.fileUrl || p.live || COURSES_DATA[cid].project.url;
-                                COURSES_DATA[cid].project.codeUrl = p.codeUrl || null;
-                                COURSES_DATA[cid].project.github = p.github || COURSES_DATA[cid].project.github;
-                            }
+                    try { data = JSON.parse(saved); } catch(e) {}
+                }
+            }
+            if (data) {
+                for (const cid in data) {
+                    if (COURSES_DATA[cid]) {
+                        if (data[cid].assignments && data[cid].assignments.length > 0) {
+                            COURSES_DATA[cid].assignments = data[cid].assignments.map(a => ({
+                                title: a.title,
+                                desc: a.desc,
+                                status: a.status || 'Graded',
+                                score: a.score || '',
+                                url: a.questionUrl || 'https://jmp.sh/TjycFeJg'
+                            }));
                         }
-                    } catch(err) {}
+                        if (data[cid].projects && data[cid].projects.length > 0) {
+                            const p = data[cid].projects[0];
+                            if (!COURSES_DATA[cid].project) {
+                                COURSES_DATA[cid].project = {
+                                    sectionTitle: "Mini Project",
+                                    sectionSubtitle: "Coursework Deliverable",
+                                    badge: "Mini Project Deliverable",
+                                    tech: [],
+                                    btnText: "View Mini Project"
+                                };
+                            }
+                            COURSES_DATA[cid].project.title = p.title;
+                            COURSES_DATA[cid].project.desc = p.desc;
+                            COURSES_DATA[cid].project.subtitle = p.subtitle || COURSES_DATA[cid].project.subtitle;
+                            COURSES_DATA[cid].project.tech = p.tech || COURSES_DATA[cid].project.tech || [];
+                            COURSES_DATA[cid].project.url = p.fileUrl || p.live || COURSES_DATA[cid].project.url;
+                            COURSES_DATA[cid].project.codeUrl = p.codeUrl || null;
+                            COURSES_DATA[cid].project.github = p.github || COURSES_DATA[cid].project.github;
+                        }
+                    }
                 }
             }
             renderCourse(currentCourseId);
