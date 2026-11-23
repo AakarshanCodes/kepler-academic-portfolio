@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kepler Admin Portal // Academic Management</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Optional Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kepler: {
+                            orange: '#FF8900',
+                            charcoal: '#242424',
+                            black: '#171717',
+                            white: '#FFFFFF',
+                            offwhite: '#F7F7F5',
+                            lightgrey: '#E8ECEC',
+                            muted: '#929292',
+                            darkborder: '#2A2A2A',
+                            subtleborder: '#E2E6E6'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #171717;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FF8900;
+        }
+    </style>
+</head>
+
+<body class="bg-kepler-black text-kepler-offwhite font-sans antialiased min-h-screen">
+
+    <!-- LOGIN OVERLAY (Restricts Admin Access) -->
+    <div id="login-modal" class="fixed inset-0 z-50 bg-kepler-black flex items-center justify-center p-6">
+        <div class="bg-kepler-charcoal border border-kepler-darkborder p-10 max-w-md w-full shadow-2xl relative">
+            <div class="flex items-center space-x-3 mb-6">
+                <span class="w-3.5 h-3.5 bg-kepler-orange"></span>
+                <span class="font-mono text-xs uppercase tracking-widest text-white">KEPLER ARCHIVE //
+                    AUTHENTICATION</span>
+            </div>
+            <h2 class="font-serif text-3xl font-normal text-white mb-2">Faculty Admin Access</h2>
+            <p class="text-xs text-kepler-muted font-light mb-8">
+                Enter your administrative credentials to manage assignments, capstones, lectures, and resources.
+            </p>
+            <form onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block font-mono text-[11px] text-kepler-muted uppercase mb-2">Admin Passcode /
+                        Token</label>
+                    <input type="password" id="admin-passcode" value="kepler2026" required
+                        class="w-full bg-kepler-black border border-kepler-darkborder px-4 py-3 font-mono text-sm text-white focus:outline-none focus:border-kepler-orange">
+                    <p class="text-[10px] font-mono text-kepler-muted mt-2">Default demo passcode: <code
+                            class="text-kepler-orange">kepler2026</code></p>
+                </div>
+                <button type="submit"
+                    class="w-full py-3.5 bg-kepler-orange text-kepler-black font-mono text-xs font-bold uppercase tracking-wider hover:bg-white transition-colors">
+                    Authenticate & Access Dashboard
+                </button>
+                <div class="pt-4 border-t border-kepler-darkborder text-center">
+                    <a href="index.html"
+                        class="font-mono text-xs text-kepler-muted hover:text-white transition-colors">← Return to
+                        Public Portfolio</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN ADMIN DASHBOARD (Hidden until authenticated) -->
+    <div id="admin-dashboard" class="hidden min-h-screen flex flex-col">
+        <!-- Top Nav -->
+        <header class="bg-kepler-black border-b border-kepler-darkborder sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="index.html"
+                        class="flex items-center space-x-2 text-white font-mono text-xs uppercase tracking-wider hover:text-kepler-orange">
+                        <span class="w-2.5 h-2.5 bg-kepler-orange"></span>
+                        <span class="font-bold">AAKARSHAN INDORI</span>
+                    </a>
+                    <span class="text-kepler-darkborder">/</span>
+                    <span class="font-mono text-xs text-kepler-muted uppercase">ADMINISTRATIVE CONSOLE</span>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <button onclick="openSupabaseConfigModal()"
+                        class="px-3 py-1.5 bg-kepler-charcoal border border-kepler-darkborder text-xs font-mono text-kepler-orange hover:bg-kepler-orange hover:text-kepler-black transition-colors flex items-center space-x-1.5">
+                        <i data-lucide="database" class="w-3.5 h-3.5"></i>
+                        <span>Supabase Config</span>
+                    </button>
+                    <button onclick="exportDataJson()"
+                        class="px-3 py-1.5 bg-kepler-charcoal border border-kepler-darkborder text-xs font-mono text-white hover:border-kepler-orange transition-colors flex items-center space-x-1.5">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Export JSON</span>
+                    </button>
+                    <button onclick="handleLogout()"
+                        class="px-3 py-1.5 border border-red-500/40 text-red-400 font-mono text-xs hover:bg-red-500 hover:text-white transition-colors">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Course Selector & Section Tabs -->
+        <div class="bg-kepler-charcoal border-b border-kepler-darkborder px-6 py-4">
+            <div
+                class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs">
+                <!-- Course Selector -->
+                <div class="flex items-center space-x-3">
+                    <span class="text-kepler-muted uppercase">MANAGING COURSE:</span>
+                    <select id="course-selector" onchange="onCourseChange()"
+                        class="bg-kepler-black border border-kepler-darkborder px-4 py-2 text-white font-bold focus:outline-none focus:border-kepler-orange">
+                        <option value="data-science">01. Data Science Foundation (BCS5403Y26 - Prof. Rushikesh Pawar)
+                        </option>
+                        <option value="artificial-intelligence">02. Artificial Intelligence (BCS5402Y26 - Prof. Kamlesh
+                            Ahuja)</option>
+                        <option value="cloud-computing">03. Fundamentals of Cloud (BCS5401Y26 - Prof. Sneha Talwalkar)
+                        </option>
+                        <option value="entrepreneurship">04. Entrepreneurship (ENT-305)</option>
+                        <option value="internship-eval-1">05. Internship -1 (BCS5601Y26 - Prof. Neha Mangal)</option>
+                        <option value="advanced-ai">06. Advanced AI (E-1) (BCS5551Y26 - Prof. Jitendra Choudhary)
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Admin Tabs -->
+                <div class="flex items-center space-x-2 overflow-x-auto">
+                    <button onclick="switchAdminTab('assignments')" id="adm-tab-assignments"
+                        class="px-4 py-2 bg-kepler-orange text-kepler-black font-bold uppercase">Assignments</button>
+                    <button onclick="switchAdminTab('projects')" id="adm-tab-projects"
+                        class="px-4 py-2 bg-kepler-black text-kepler-muted hover:text-white uppercase">Projects</button>
+                    <button onclick="switchAdminTab('learnings')" id="adm-tab-learnings"
+                        class="px-4 py-2 bg-kepler-black text-kepler-muted hover:text-white uppercase">Classroom
+                        Lectures</button>
+                    <button onclick="switchAdminTab('resources')" id="adm-tab-resources"
+                        class="px-4 py-2 bg-kepler-black text-kepler-muted hover:text-white uppercase">Resources</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN MANAGEMENT WORKSPACE -->
+        <main class="max-w-7xl mx-auto px-6 py-10 w-full flex-1">
+
+            <!-- 1. ASSIGNMENTS TAB -->
+            <div id="section-assignments" class="admin-section space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-kepler-darkborder">
+                    <div>
+                        <h2 class="font-serif text-3xl text-white">Course Assignments</h2>
+                        <p class="font-mono text-xs text-kepler-muted mt-1">Manage problem sets, deadlines, scores, and
+                            question/solution files.</p>
+                    </div>
+                    <button onclick="openAssignmentModal()"
+                        class="px-4 py-2 bg-kepler-orange text-kepler-black font-mono text-xs font-bold uppercase hover:bg-white transition-colors flex items-center space-x-1.5">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Add New Assignment</span>
+                    </button>
+                </div>
+
+                <!-- Assignments Table -->
+                <div class="bg-kepler-charcoal border border-kepler-darkborder overflow-x-auto">
+                    <table class="w-full text-left font-mono text-xs">
+                        <thead class="bg-kepler-black text-kepler-muted uppercase border-b border-kepler-darkborder">
+                            <tr>
+                                <th class="p-4">#</th>
+                                <th class="p-4">Title</th>
+                                <th class="p-4">Deadline</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Score</th>
+                                <th class="p-4">Files</th>
+                                <th class="p-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-assignments" class="divide-y divide-kepler-darkborder text-kepler-offwhite">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. PROJECTS TAB -->
+            <div id="section-projects" class="admin-section hidden space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-kepler-darkborder">
+                    <div>
+                        <h2 class="font-serif text-3xl text-white">Capstone Projects</h2>
+                        <p class="font-mono text-xs text-kepler-muted mt-1">Manage production repositories,
+                            architectural RFCs, and live deployments.</p>
+                    </div>
+                    <button onclick="openProjectModal()"
+                        class="px-4 py-2 bg-kepler-orange text-kepler-black font-mono text-xs font-bold uppercase hover:bg-white transition-colors flex items-center space-x-1.5">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Add New Project</span>
+                    </button>
+                </div>
+
+                <div id="grid-projects" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- 3. CLASSROOM LECTURES TAB -->
+            <div id="section-learnings" class="admin-section hidden space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-kepler-darkborder">
+                    <div>
+                        <h2 class="font-serif text-3xl text-white">Classroom Learnings</h2>
+                        <p class="font-mono text-xs text-kepler-muted mt-1">Log lectures, dates, core theoretical
+                            topics, and presentation slide attachments.</p>
+                    </div>
+                    <button onclick="openLearningModal()"
+                        class="px-4 py-2 bg-kepler-orange text-kepler-black font-mono text-xs font-bold uppercase hover:bg-white transition-colors flex items-center space-x-1.5">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Add Lecture Entry</span>
+                    </button>
+                </div>
+
+                <div id="list-learnings" class="space-y-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- 4. RESOURCES TAB -->
+            <div id="section-resources" class="admin-section hidden space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-kepler-darkborder">
+                    <div>
+                        <h2 class="font-serif text-3xl text-white">Academic Resources & Papers</h2>
+                        <p class="font-mono text-xs text-kepler-muted mt-1">Upload reference textbooks, cheat sheets,
+                            benchmarks, and research papers.</p>
+                    </div>
+                    <button onclick="openResourceModal()"
+                        class="px-4 py-2 bg-kepler-orange text-kepler-black font-mono text-xs font-bold uppercase hover:bg-white transition-colors flex items-center space-x-1.5">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Add Resource File</span>
+                    </button>
+                </div>
+
+                <div id="grid-resources" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ASSIGNMENT EDIT/CREATE MODAL -->
+    <div id="modal-assignment"
+        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div
+            class="bg-kepler-charcoal border border-kepler-darkborder max-w-xl w-full p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-4 border-b border-kepler-darkborder mb-6">
+                <h3 id="modal-asg-title" class="font-serif text-2xl text-white">Add Assignment</h3>
+                <button onclick="closeModal('modal-assignment')" class="text-kepler-muted hover:text-white"><i
+                        data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="saveAssignment(event)" class="space-y-4 font-mono text-xs">
+                <input type="hidden" id="asg-edit-id">
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Assignment Number</label>
+                    <input type="number" id="asg-num" required
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Title</label>
+                    <input type="text" id="asg-title" required
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white font-sans text-sm">
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Description / Problem Statement</label>
+                    <textarea id="asg-desc" rows="3" required
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white font-sans text-sm"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">Deadline Date & Time</label>
+                        <input type="datetime-local" id="asg-deadline" required
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">Status</label>
+                        <select id="asg-status"
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Submitted">Submitted</option>
+                            <option value="Graded">Graded</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">Score / Evaluation</label>
+                        <input type="text" id="asg-score" placeholder="e.g. 98.5 / 100"
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">Curriculum Weightage</label>
+                        <input type="text" id="asg-weight" placeholder="e.g. 20%"
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                    </div>
+                </div>
+                <div class="border-t border-kepler-darkborder pt-4">
+                    <label class="block text-kepler-orange uppercase mb-1">Upload Question Document (PDF / DOCX)</label>
+                    <input type="file" id="asg-question-file"
+                        onchange="uploadFileToServer(this, 'asg-question-url', 'asg-question-status')"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2 text-kepler-muted">
+                    <div id="asg-question-status" class="text-[11px] text-kepler-muted mt-1"></div>
+                    <input type="text" id="asg-question-url"
+                        placeholder="Or enter question file URL / /uploads/filename.pdf"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2 text-white mt-1.5">
+                </div>
+                <div>
+                    <label class="block text-emerald-400 uppercase mb-1">Upload Solution Code/Artifact (PDF /
+                        Code)</label>
+                    <input type="file" id="asg-solution-file"
+                        onchange="uploadFileToServer(this, 'asg-solution-url', 'asg-solution-status')"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2 text-kepler-muted">
+                    <div id="asg-solution-status" class="text-[11px] text-kepler-muted mt-1"></div>
+                    <input type="text" id="asg-solution-url" placeholder="Or enter solution file URL"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2 text-white mt-1.5">
+                </div>
+                <div class="pt-4 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('modal-assignment')"
+                        class="px-4 py-2 border border-kepler-darkborder text-white hover:bg-kepler-black">Cancel</button>
+                    <button type="submit"
+                        class="px-5 py-2 bg-kepler-orange text-kepler-black font-bold uppercase hover:bg-white transition-colors">Save
+                        Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PROJECT EDIT/CREATE MODAL -->
+    <div id="modal-project"
+        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div
+            class="bg-kepler-charcoal border border-kepler-darkborder max-w-xl w-full p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-4 border-b border-kepler-darkborder mb-6">
+                <h3 id="modal-proj-title" class="font-serif text-2xl text-white">Add Capstone Project</h3>
+                <button onclick="closeModal('modal-project')" class="text-kepler-muted hover:text-white"><i
+                        data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="saveProject(event)" class="space-y-4 font-mono text-xs">
+                <input type="hidden" id="proj-edit-idx">
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Project Title</label>
+                    <input type="text" id="proj-title" required
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white font-sans text-sm">
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Subtitle / Architectural
+                        Classification</label>
+                    <input type="text" id="proj-subtitle"
+                        placeholder="e.g. Distributed Kafka & PySpark Anomaly Detector"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Description</label>
+                    <textarea id="proj-desc" rows="3" required
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white font-sans text-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Architectural RFC / Documentation</label>
+                    <textarea id="proj-doc" rows="3"
+                        placeholder="Full technical architecture, performance milestones, and trade-offs"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white font-sans text-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Tech Stack (comma-separated)</label>
+                    <input type="text" id="proj-tech" placeholder="PySpark, Kafka, Docker, Kubernetes"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Project Thumbnail Image URL</label>
+                    <input type="text" id="proj-image" placeholder="https://images.unsplash.com/..."
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                </div>
+                <div class="border-t border-kepler-darkborder pt-4">
+                    <label class="block text-kepler-orange uppercase mb-1">Upload Project Report / Document (PDF / DOCX / XLSX)</label>
+                    <input type="file" id="proj-file"
+                        onchange="uploadFileToServer(this, 'proj-file-url', 'proj-file-status')"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2 text-kepler-muted">
+                    <div id="proj-file-status" class="text-[11px] text-kepler-muted mt-1"></div>
+                    <input type="text" id="proj-file-url"
+                        placeholder="Or enter project file URL / /uploads/filename.pdf"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2 text-white mt-1.5">
+                </div>
+                <div>
+                    <label class="block text-emerald-400 uppercase mb-1">Upload Project Code / Deliverable ZIP (ZIP / IPYNB / Code)</label>
+                    <input type="file" id="proj-code-file"
+                        onchange="uploadFileToServer(this, 'proj-code-url', 'proj-code-status')"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2 text-kepler-muted">
+                    <div id="proj-code-status" class="text-[11px] text-kepler-muted mt-1"></div>
+                    <input type="text" id="proj-code-url" placeholder="Or enter code/deliverable file URL"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2 text-white mt-1.5">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">GitHub Repository URL</label>
+                        <input type="url" id="proj-github" placeholder="https://github.com/..."
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">Live Deployment / Preview URL</label>
+                        <input type="url" id="proj-live" placeholder="https://..."
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('modal-project')"
+                        class="px-4 py-2 border border-kepler-darkborder text-white hover:bg-kepler-black">Cancel</button>
+                    <button type="submit"
+                        class="px-5 py-2 bg-kepler-orange text-kepler-black font-bold uppercase hover:bg-white transition-colors">Save
+                        Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- LECTURE EDIT/CREATE MODAL -->
+    <div id="modal-learning"
+        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div
+            class="bg-kepler-charcoal border border-kepler-darkborder max-w-xl w-full p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-4 border-b border-kepler-darkborder mb-6">
+                <h3 id="modal-learn-title" class="font-serif text-2xl text-white">Log Classroom Lecture</h3>
+                <button onclick="closeModal('modal-learning')" class="text-kepler-muted hover:text-white"><i
+                        data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="saveLearning(event)" class="space-y-4 font-mono text-xs">
+                <input type="hidden" id="learn-edit-idx">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">Lecture Number</label>
+                        <input type="number" id="learn-num" required
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">Lecture Date</label>
+                        <input type="date" id="learn-date" required
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Topic</label>
+                    <input type="text" id="learn-topic" required
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white font-sans text-sm">
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Detailed Explanation / Theoretical
+                        Notes</label>
+                    <textarea id="learn-explanation" rows="4" required
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white font-sans text-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Key Takeaways (comma-separated)</label>
+                    <input type="text" id="learn-takeaways" placeholder="Eigenvalues, High-dimensional geometry, PCA"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                </div>
+                <div class="pt-4 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('modal-learning')"
+                        class="px-4 py-2 border border-kepler-darkborder text-white hover:bg-kepler-black">Cancel</button>
+                    <button type="submit"
+                        class="px-5 py-2 bg-kepler-orange text-kepler-black font-bold uppercase hover:bg-white transition-colors">Save
+                        Lecture</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- RESOURCE EDIT/CREATE MODAL -->
+    <div id="modal-resource"
+        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div
+            class="bg-kepler-charcoal border border-kepler-darkborder max-w-xl w-full p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-4 border-b border-kepler-darkborder mb-6">
+                <h3 id="modal-res-title" class="font-serif text-2xl text-white">Add Academic Resource</h3>
+                <button onclick="closeModal('modal-resource')" class="text-kepler-muted hover:text-white"><i
+                        data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="saveResource(event)" class="space-y-4 font-mono text-xs">
+                <input type="hidden" id="res-edit-idx">
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Resource Title</label>
+                    <input type="text" id="res-title" required
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white font-sans text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">Category</label>
+                        <select id="res-category"
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                            <option value="Textbook">Textbook</option>
+                            <option value="Research Paper">Research Paper</option>
+                            <option value="Cheat Sheet">Cheat Sheet</option>
+                            <option value="Dataset">Dataset</option>
+                            <option value="Handbook">Handbook</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">File Format</label>
+                        <select id="res-type"
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                            <option value="PDF">PDF</option>
+                            <option value="ZIP">ZIP</option>
+                            <option value="JUPYTER">Jupyter (.ipynb)</option>
+                            <option value="DOCX">DOCX</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">File Size Estimate</label>
+                    <input type="text" id="res-size" placeholder="e.g. 14.5 MB"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">Description</label>
+                    <textarea id="res-desc" rows="2"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white font-sans text-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-kepler-orange uppercase mb-1">File URL / Download Link</label>
+                    <input type="text" id="res-url" placeholder="https://..."
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                </div>
+                <div class="pt-4 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('modal-resource')"
+                        class="px-4 py-2 border border-kepler-darkborder text-white hover:bg-kepler-black">Cancel</button>
+                    <button type="submit"
+                        class="px-5 py-2 bg-kepler-orange text-kepler-black font-bold uppercase hover:bg-white transition-colors">Save
+                        Resource</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SUPABASE CONFIGURATION MODAL -->
+    <div id="modal-supabase"
+        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-kepler-charcoal border border-kepler-darkborder max-w-lg w-full p-8 shadow-2xl relative">
+            <div class="flex items-center justify-between pb-4 border-b border-kepler-darkborder mb-6">
+                <div class="flex items-center space-x-2">
+                    <span class="w-3 h-3 bg-emerald-500"></span>
+                    <h3 class="font-serif text-2xl text-white">Supabase Cloud Sync</h3>
+                </div>
+                <button onclick="closeModal('modal-supabase')" class="text-kepler-muted hover:text-white"><i
+                        data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-4 font-mono text-xs">
+                <p class="text-kepler-muted leading-relaxed font-sans text-xs">
+                    Connect your Supabase project to persist changes across databases, execute RLS-protected queries,
+                    and stream files directly to storage buckets.
+                </p>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">SUPABASE URL</label>
+                    <input type="url" id="cfg-supabase-url" placeholder="https://xxxx.supabase.co"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                </div>
+                <div>
+                    <label class="block text-kepler-muted uppercase mb-1">SUPABASE ANON KEY</label>
+                    <input type="password" id="cfg-supabase-key" placeholder="eyJhbGciOi..."
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                </div>
+                <div class="p-3 bg-kepler-black border border-kepler-darkborder text-[11px] text-kepler-muted">
+                    <span>Note: When unconfigured, all changes persist securely in local storage and will sync upon
+                        connection.</span>
+                </div>
+                <div class="pt-4 flex justify-between items-center">
+                    <button type="button" onclick="resetToDefaults()" class="text-red-400 hover:underline">Reset Sample
+                        Data</button>
+                    <div class="space-x-3">
+                        <button type="button" onclick="closeModal('modal-supabase')"
+                            class="px-4 py-2 border border-kepler-darkborder text-white">Close</button>
+                        <button type="button" onclick="saveSupabaseConfig()"
+                            class="px-5 py-2 bg-emerald-500 text-kepler-black font-bold uppercase hover:bg-white transition-colors">Save
+                            & Test</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN LOGIC & CRUD HANDLERS -->
+    <script>
+        let currentCourse = "data-science";
+        let currentTab = "assignments";
+        let academicData = {};
+
+        const DEFAULT_REAL_COURSES = {
+            "data-science": {
+                assignments: [
+                    { num: 1, title: "Assignment-Phase-01 Submission", desc: "Opened: Wed, 22 July 2026, 12:00 AM • Due: Fri, 24 July 2026, 3:00 PM", deadline: "2026-07-24T15:00", status: "Submitted", score: "Phase 1", weight: "20%", questionUrl: "https://jmp.sh/TjycFeJg" },
+                    { num: 2, title: "Level1 & Level 2 Submission", desc: "Opened: Tue, 28 July 2026, 12:00 AM • Due: Tue, 28 July 2026, 4:00 PM", deadline: "2026-07-28T16:00", status: "Submitted", score: "Level 1 & 2", weight: "20%", questionUrl: "https://jmp.sh/q4LyG0Lr" },
+                    { num: 3, title: "Final Submission - Level C Based on Assignment Doc", desc: "Opened: Wed, 29 July 2026, 2:00 PM • Due: Thu, 30 July 2026, 10:00 AM", deadline: "2026-07-30T10:00", status: "Graded", score: "Level C", weight: "20%", questionUrl: "https://jmp.sh/Y2SVmx8O" }
+                ],
+                projects: [
+                    { title: "Submission - Mini Project", subtitle: "Practical Coursework Mini Project", desc: "Due: Fri, 23 Oct 2026, 10:00 AM. End-to-end data science application: feature store, statistical modeling, and interactive dashboards.", tech: ["Python", "Pandas", "Scikit-Learn", "Matplotlib"], live: "https://jmp.sh/Lxt8ZCsR", github: "https://github.com/aakarshan-indori/data-science-mini-project" }
+                ],
+                learnings: [
+                    { lecture: 1, date: "2026-08-01", topic: "Exploratory Data Analysis & Feature Transforms", explanation: "Data cleaning, statistical feature transformation, and baseline modeling.", takeaways: ["EDA", "Feature Engineering"] }
+                ],
+                resources: [
+                    { title: "Data Science Foundation Lab Manual", category: "Handbook", type: "PDF", size: "4.5 MB", url: "#" }
+                ]
+            },
+            "artificial-intelligence": {
+                assignments: [
+                    { num: 1, title: "Assignment-I", desc: "Opened: Fri, 21 Aug 2026, 12:00 AM • Due: Wed, 26 Aug 2026, 12:00 AM", deadline: "2026-08-26T00:00", status: "Graded", score: "Assignment-I", weight: "25%", questionUrl: "https://jmp.sh/TjycFeJg" },
+                    { num: 2, title: "Assignment-II", desc: "Opened: Wed, 26 Aug 2026, 12:00 AM • Due: Thu, 3 Sep 2026, 12:00 AM", deadline: "2026-09-03T00:00", status: "Graded", score: "Assignment-II", weight: "25%", questionUrl: "https://jmp.sh/q4LyG0Lr" }
+                ],
+                projects: [
+                    { title: "Mini Project Submission", subtitle: "Course Mini Project Deliverable", desc: "Due: Sun, 6 Sep 2026, 3:00 PM. Autonomous heuristic game-playing agent and decision engine.", tech: ["Python", "Search Heuristics", "Alpha-Beta"], live: "https://jmp.sh/Lxt8ZCsR" }
+                ],
+                learnings: [
+                    { lecture: 1, date: "2026-08-15", topic: "Informed Heuristic Search & Admissibility", explanation: "Proofs of admissibility in A* and D* Lite algorithms.", takeaways: ["A*", "Heuristics"] }
+                ],
+                resources: [
+                    { title: "Value added course certificate", category: "Certificate", type: "PDF", size: "1.2 MB", url: "https://jmp.sh/nt9rDh4c" }
+                ]
+            },
+            "cloud-computing": {
+                assignments: [
+                    { num: 1, title: "Lab1", desc: "Opened: Fri, 9 Oct 2026, 12:00 PM • Due: Sat, 17 Oct 2026, 11:59 PM • Please see the attached file FoCC Lab1.docx for lab assignment instructions.", deadline: "2026-10-17T23:59", status: "Graded", score: "Lab 1", weight: "20%", questionUrl: "https://jmp.sh/TjycFeJg" },
+                    { num: 2, title: "Lab2", desc: "Opened: Wed, 14 Oct 2026, 10:00 AM • Due: Sat, 24 Oct 2026, 11:59 PM", deadline: "2026-10-24T23:59", status: "Graded", score: "Lab 2", weight: "20%", questionUrl: "https://jmp.sh/q4LyG0Lr" },
+                    { num: 3, title: "Lab3", desc: "Opened: Tue, 27 Oct 2026, 11:30 AM • Due: Fri, 30 Oct 2026, 11:59 PM", deadline: "2026-10-30T23:59", status: "Submitted", score: "Lab 3", weight: "20%", questionUrl: "https://jmp.sh/Y2SVmx8O" }
+                ],
+                projects: [
+                    { title: "Cloud Infrastructure & Containerization Mini Project", subtitle: "FoCC Practical Capstone", desc: "Due: Sat, 31 Oct 2026. Multi-tier microservices containerization, private network topologies, and Terraform automation.", tech: ["Docker", "Kubernetes", "Linux Cgroups", "Terraform", "AWS"], fileUrl: "https://jmp.sh/Lxt8ZCsR", codeUrl: "", live: "https://jmp.sh/Lxt8ZCsR", github: "https://github.com/aakarshan-indori/cloud-mini-project" }
+                ],
+                learnings: [
+                    { lecture: 1, date: "2026-10-01", topic: "Virtualization & Containerization", explanation: "Linux namespaces, cgroups, and container runtimes.", takeaways: ["Containers", "Docker"] }
+                ],
+                resources: [
+                    { title: "FoCC Lab1.docx Instructions", category: "Handbook", type: "DOCX", size: "2.1 MB", url: "#" }
+                ]
+            },
+            "entrepreneurship": {
+                assignments: [],
+                projects: [
+                    { title: "Tech Venture Pitch & Business Financial Model", subtitle: "Entrepreneurial Capstone Deliverable", desc: "Technological venture feasibility analysis, customer discovery field studies, B2B SaaS unit economics, and seed pitch deck.", tech: ["Financial Modeling", "Market Analysis", "B2B SaaS Unit Economics", "Pitch Deck"], fileUrl: "https://jmp.sh/Lxt8ZCsR", codeUrl: "", live: "https://jmp.sh/Lxt8ZCsR", github: "" }
+                ],
+                learnings: [],
+                resources: [
+                    { title: "Value-Added Entrepreneurship Certificate", category: "Certificate", type: "PDF", size: "1.8 MB", url: "https://jmp.sh/nt9rDh4c" }
+                ]
+            },
+            "internship-eval-1": {
+                assignments: [],
+                projects: [
+                    { title: "Internship -1 Technical Presentation & Viva Defense", subtitle: "Executive Defense & Evaluation", desc: "Corporate engineering deliverables, sprint achievements, and viva defense under Prof. Neha Mangal.", tech: ["Corporate Practicum", "Architecture RFCs"], live: "https://jmp.sh/TjycFeJg" }
+                ],
+                learnings: [],
+                resources: []
+            },
+            "advanced-ai": {
+                assignments: [
+                    { num: 1, title: "Assignment 1: Transformer & Self-Attention Implementation", desc: "Decoder-only GPT architecture coded from scratch with rotary position embeddings.", deadline: "2026-10-15T23:59", status: "Graded", score: "99%", weight: "25%", questionUrl: "https://jmp.sh/TjycFeJg" },
+                    { num: 2, title: "Assignment 2: Diffusion Sampling & Fine-Tuning LoRA", desc: "Denoising Diffusion Probabilistic Models (DDPM) reverse step and fine-tuning.", deadline: "2026-11-10T23:59", status: "Submitted", score: "Pending", weight: "25%", questionUrl: "https://jmp.sh/q4LyG0Lr" }
+                ],
+                projects: [
+                    { title: "NeuroForge: Latent Diffusion Image Synthesis", subtitle: "Advanced AI Prototype", desc: "Custom 1.2B parameter latent diffusion model trained with classifier-free guidance.", tech: ["PyTorch", "CUDA", "Triton"], live: "https://jmp.sh/Lxt8ZCsR" }
+                ],
+                learnings: [],
+                resources: []
+            }
+        };
+
+        // File Uploader function to upload any file directly to server's uploads/ folder
+        async function uploadFileToServer(fileInput, targetUrlInputId, statusDivId) {
+            const file = fileInput.files[0];
+            if (!file) return;
+            const statusDiv = document.getElementById(statusDivId);
+            if (statusDiv) statusDiv.innerHTML = `<span class="text-amber-400 font-mono text-xs">⏳ Uploading ${file.name}...</span>`;
+
+            const reader = new FileReader();
+            reader.onload = async function (e) {
+                const base64 = e.target.result.split(',')[1];
+                try {
+                    const res = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filename: file.name, base64: base64 })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        document.getElementById(targetUrlInputId).value = data.url;
+                        if (statusDiv) statusDiv.innerHTML = `<span class="text-emerald-400 font-mono text-xs font-bold">✓ Uploaded to ${data.url}</span>`;
+                    } else {
+                        alert("Upload failed: " + data.error);
+                        if (statusDiv) statusDiv.innerText = "Upload failed";
+                    }
+                } catch (err) {
+                    console.warn("Server upload failed, using local fallback", err);
+                    document.getElementById(targetUrlInputId).value = e.target.result;
+                    if (statusDiv) statusDiv.innerHTML = `<span class="text-emerald-400 font-mono text-xs">✓ Stored locally: ${file.name}</span>`;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Load data from server API, localStorage or defaults
+        async function loadAdminData() {
+            try {
+                const res = await fetch('/api/get-data');
+                if (res.ok) {
+                    academicData = await res.json();
+                    localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
+                    if (typeof renderActiveTab === 'function') renderActiveTab();
+                    return;
+                }
+            } catch (e) { }
+            const saved = localStorage.getItem("kepler_academic_data");
+            if (saved) {
+                try {
+                    academicData = JSON.parse(saved);
+                } catch (e) {
+                    console.error("Error reading saved data", e);
+                    academicData = DEFAULT_REAL_COURSES;
+                }
+            } else {
+                academicData = DEFAULT_REAL_COURSES;
+                localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
+            }
+            if (typeof renderActiveTab === 'function') renderActiveTab();
+        }
+
+        function persistData() {
+            localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
+            // Also sync to disk
+            fetch('/api/save-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(academicData)
+            }).catch(e => console.warn("API sync error", e));
+            window.dispatchEvent(new Event('storage'));
+        }
+
+        // Authentication
+        function handleLogin(e) {
+            e.preventDefault();
+            const pass = document.getElementById("admin-passcode").value;
+            if (pass === "kepler2026" || pass.length >= 6) {
+                document.getElementById("login-modal").classList.add("hidden");
+                document.getElementById("admin-dashboard").classList.remove("hidden");
+                initAdmin();
+            } else {
+                alert("Invalid admin passcode. Demo passcode is 'kepler2026'.");
+            }
+        }
+
+        function handleLogout() {
+            document.getElementById("admin-dashboard").classList.add("hidden");
+            document.getElementById("login-modal").classList.remove("hidden");
+        }
+
+        function onCourseChange() {
+            currentCourse = document.getElementById("course-selector").value;
+            renderActiveTab();
+        }
+
+        function switchAdminTab(tab) {
+            currentTab = tab;
+            ['assignments', 'projects', 'learnings', 'resources'].forEach(t => {
+                const btn = document.getElementById(`adm-tab-${t}`);
+                const sec = document.getElementById(`section-${t}`);
+                if (t === tab) {
+                    btn.classList.add("bg-kepler-orange", "text-kepler-black", "font-bold");
+                    btn.classList.remove("bg-kepler-black", "text-kepler-muted");
+                    sec.classList.remove("hidden");
+                } else {
+                    btn.classList.remove("bg-kepler-orange", "text-kepler-black", "font-bold");
+                    btn.classList.add("bg-kepler-black", "text-kepler-muted");
+                    sec.classList.add("hidden");
+                }
+            });
+            renderActiveTab();
+        }
+
+        function renderActiveTab() {
+            if (currentTab === "assignments") renderAssignmentsTable();
+            if (currentTab === "projects") renderProjectsGrid();
+            if (currentTab === "learnings") renderLearningsList();
+            if (currentTab === "resources") renderResourcesGrid();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // ---------------------------------------------------------------------
+        // CRUD: ASSIGNMENTS
+        // ---------------------------------------------------------------------
+        function renderAssignmentsTable() {
+            const table = document.getElementById("table-assignments");
+            const assignments = (academicData[currentCourse] && academicData[currentCourse].assignments) || [];
+            if (assignments.length === 0) {
+                table.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-kepler-muted">No assignments created yet for this course. Click "Add New Assignment".</td></tr>`;
+                return;
+            }
+            table.innerHTML = assignments.map((a, idx) => `
+                <tr class="hover:bg-kepler-black/40 transition-colors">
+                    <td class="p-4 text-kepler-orange font-bold">0${a.num}</td>
+                    <td class="p-4 font-sans font-medium text-white">${a.title}</td>
+                    <td class="p-4 text-kepler-muted">${new Date(a.deadline).toLocaleDateString()}</td>
+                    <td class="p-4"><span class="px-2 py-0.5 text-[10px] font-bold ${a.status === 'Graded' ? 'bg-kepler-orange text-kepler-black' : a.status === 'Submitted' ? 'bg-emerald-600 text-white' : 'bg-kepler-black text-kepler-muted'}">${a.status}</span></td>
+                    <td class="p-4 text-kepler-offwhite">${a.score || '—'}</td>
+                    <td class="p-4 text-kepler-muted text-[10px]">${a.questionUrl ? `<a href="${a.questionUrl}" target="_blank" class="text-kepler-orange hover:underline font-mono font-semibold">Doc ↗</a>` : '—'} | ${a.solutionUrl ? `<a href="${a.solutionUrl}" target="_blank" class="text-emerald-400 hover:underline font-mono font-semibold">Code ↗</a>` : '—'}</td>
+                    <td class="p-4 text-right space-x-2">
+                        <button onclick="editAssignment(${idx})" class="p-1 hover:text-kepler-orange" title="Edit"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        <button onclick="deleteAssignment(${idx})" class="p-1 hover:text-red-400" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAssignmentModal(editIndex = -1) {
+            document.getElementById("modal-assignment").classList.remove("hidden");
+            if (editIndex >= 0) {
+                const a = academicData[currentCourse].assignments[editIndex];
+                document.getElementById("modal-asg-title").innerText = "Edit Assignment";
+                document.getElementById("asg-edit-id").value = editIndex;
+                document.getElementById("asg-num").value = a.num;
+                document.getElementById("asg-title").value = a.title;
+                document.getElementById("asg-desc").value = a.desc;
+                document.getElementById("asg-deadline").value = a.deadline ? a.deadline.slice(0, 16) : "";
+                document.getElementById("asg-status").value = a.status;
+                document.getElementById("asg-score").value = a.score || "";
+                document.getElementById("asg-weight").value = a.weight || "";
+                document.getElementById("asg-question-url").value = a.questionUrl || "";
+                document.getElementById("asg-solution-url").value = a.solutionUrl || "";
+            } else {
+                document.getElementById("modal-asg-title").innerText = "Add Assignment";
+                document.getElementById("asg-edit-id").value = "-1";
+                document.getElementById("asg-num").value = (academicData[currentCourse].assignments.length + 1);
+                document.getElementById("asg-title").value = "";
+                document.getElementById("asg-desc").value = "";
+                document.getElementById("asg-deadline").value = "2026-11-30T23:59";
+                document.getElementById("asg-status").value = "In Progress";
+                document.getElementById("asg-score").value = "";
+                document.getElementById("asg-weight").value = "20%";
+                document.getElementById("asg-question-url").value = "";
+                document.getElementById("asg-solution-url").value = "";
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function editAssignment(idx) {
+            openAssignmentModal(idx);
+        }
+
+        function deleteAssignment(idx) {
+            if (confirm("Are you sure you want to delete this assignment?")) {
+                academicData[currentCourse].assignments.splice(idx, 1);
+                persistData();
+                renderAssignmentsTable();
+            }
+        }
+
+        function saveAssignment(e) {
+            e.preventDefault();
+            const editId = parseInt(document.getElementById("asg-edit-id").value);
+            const asgObj = {
+                num: parseInt(document.getElementById("asg-num").value),
+                title: document.getElementById("asg-title").value,
+                desc: document.getElementById("asg-desc").value,
+                deadline: document.getElementById("asg-deadline").value,
+                status: document.getElementById("asg-status").value,
+                score: document.getElementById("asg-score").value,
+                weight: document.getElementById("asg-weight").value,
+                questionUrl: document.getElementById("asg-question-url").value || "Question_Paper.pdf",
+                solutionUrl: document.getElementById("asg-solution-url").value || null
+            };
+
+            if (editId >= 0) {
+                academicData[currentCourse].assignments[editId] = asgObj;
+            } else {
+                academicData[currentCourse].assignments.push(asgObj);
+            }
+
+            persistData();
+            closeModal('modal-assignment');
+            renderAssignmentsTable();
+            alert("Assignment successfully saved and synced to database.");
+        }
+
+        // ---------------------------------------------------------------------
+        // CRUD: PROJECTS
+        // ---------------------------------------------------------------------
+        function renderProjectsGrid() {
+            const grid = document.getElementById("grid-projects");
+            if (!academicData[currentCourse]) academicData[currentCourse] = { assignments: [], projects: [], learnings: [], resources: [] };
+            if (!academicData[currentCourse].projects) academicData[currentCourse].projects = [];
+            const projects = academicData[currentCourse].projects;
+            if (projects.length === 0) {
+                grid.innerHTML = `<div class="col-span-full p-8 text-center text-kepler-muted font-mono text-xs">No projects documented for this course yet. Click "Add New Project" above.</div>`;
+                return;
+            }
+            grid.innerHTML = projects.map((p, idx) => `
+                <div class="bg-kepler-black p-6 border border-kepler-darkborder space-y-4">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="text-[10px] font-mono text-kepler-orange uppercase block">${p.subtitle || 'Capstone Deliverable'}</span>
+                            <h3 class="font-serif text-2xl text-white">${p.title}</h3>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="editProject(${idx})" class="p-1 hover:text-kepler-orange" title="Edit"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="deleteProject(${idx})" class="p-1 hover:text-red-400" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-kepler-muted line-clamp-2">${p.desc}</p>
+                    <div class="flex flex-wrap gap-1 font-mono text-[10px]">
+                        ${(p.tech || []).map(t => `<span class="bg-kepler-charcoal px-2 py-0.5 text-white">${t}</span>`).join('')}
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3 text-[11px] font-mono pt-3 border-t border-kepler-darkborder">
+                        ${p.fileUrl || p.live ? `<a href="${p.fileUrl || p.live}" target="_blank" class="text-kepler-orange hover:underline font-semibold flex items-center gap-1"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> Project Doc ↗</a>` : '<span class="text-kepler-muted">No Doc</span>'}
+                        ${p.codeUrl ? `<span class="text-kepler-darkborder">|</span><a href="${p.codeUrl}" target="_blank" class="text-emerald-400 hover:underline font-semibold flex items-center gap-1"><i data-lucide="code" class="w-3.5 h-3.5"></i> Code File ↗</a>` : ''}
+                        ${p.github ? `<span class="text-kepler-darkborder">|</span><a href="${p.github}" target="_blank" class="text-sky-400 hover:underline flex items-center gap-1"><i data-lucide="github" class="w-3.5 h-3.5"></i> Repo</a>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function openProjectModal(editIndex = -1) {
+            document.getElementById("modal-project").classList.remove("hidden");
+            if (!academicData[currentCourse]) academicData[currentCourse] = { assignments: [], projects: [], learnings: [], resources: [] };
+            if (!academicData[currentCourse].projects) academicData[currentCourse].projects = [];
+
+            if (editIndex >= 0) {
+                const p = academicData[currentCourse].projects[editIndex];
+                document.getElementById("modal-proj-title").innerText = "Edit Project";
+                document.getElementById("proj-edit-idx").value = editIndex;
+                document.getElementById("proj-title").value = p.title || "";
+                document.getElementById("proj-subtitle").value = p.subtitle || "";
+                document.getElementById("proj-desc").value = p.desc || "";
+                document.getElementById("proj-doc").value = p.doc || "";
+                document.getElementById("proj-tech").value = (p.tech || []).join(', ');
+                document.getElementById("proj-image").value = p.image || "";
+                document.getElementById("proj-file-url").value = p.fileUrl || p.live || "";
+                document.getElementById("proj-file").value = "";
+                document.getElementById("proj-file-status").innerHTML = (p.fileUrl || p.live) ? `<span class="text-emerald-400 font-mono text-[11px]">Current File: ${p.fileUrl || p.live}</span>` : "";
+                document.getElementById("proj-code-url").value = p.codeUrl || "";
+                document.getElementById("proj-code-file").value = "";
+                document.getElementById("proj-code-status").innerHTML = p.codeUrl ? `<span class="text-emerald-400 font-mono text-[11px]">Current Code: ${p.codeUrl}</span>` : "";
+                document.getElementById("proj-github").value = p.github || "";
+                document.getElementById("proj-live").value = p.live || "";
+            } else {
+                document.getElementById("modal-proj-title").innerText = "Add Project";
+                document.getElementById("proj-edit-idx").value = "-1";
+                document.getElementById("proj-title").value = "";
+                document.getElementById("proj-subtitle").value = "";
+                document.getElementById("proj-desc").value = "";
+                document.getElementById("proj-doc").value = "";
+                document.getElementById("proj-tech").value = "";
+                document.getElementById("proj-image").value = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80";
+                document.getElementById("proj-file-url").value = "";
+                document.getElementById("proj-file").value = "";
+                document.getElementById("proj-file-status").innerHTML = "";
+                document.getElementById("proj-code-url").value = "";
+                document.getElementById("proj-code-file").value = "";
+                document.getElementById("proj-code-status").innerHTML = "";
+                document.getElementById("proj-github").value = "";
+                document.getElementById("proj-live").value = "";
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function editProject(idx) { openProjectModal(idx); }
+
+        function deleteProject(idx) {
+            if (confirm("Delete this project?")) {
+                academicData[currentCourse].projects.splice(idx, 1);
+                persistData();
+                renderProjectsGrid();
+            }
+        }
+
+        function saveProject(e) {
+            e.preventDefault();
+            const editId = parseInt(document.getElementById("proj-edit-idx").value);
+            const fileUrl = document.getElementById("proj-file-url").value;
+            const codeUrl = document.getElementById("proj-code-url").value;
+            const liveUrl = document.getElementById("proj-live").value;
+
+            const projObj = {
+                title: document.getElementById("proj-title").value,
+                subtitle: document.getElementById("proj-subtitle").value,
+                desc: document.getElementById("proj-desc").value,
+                doc: document.getElementById("proj-doc").value,
+                tech: document.getElementById("proj-tech").value.split(',').map(s => s.trim()).filter(Boolean),
+                image: document.getElementById("proj-image").value,
+                fileUrl: fileUrl,
+                codeUrl: codeUrl,
+                github: document.getElementById("proj-github").value,
+                live: liveUrl || fileUrl
+            };
+
+            if (!academicData[currentCourse]) academicData[currentCourse] = { assignments: [], projects: [], learnings: [], resources: [] };
+            if (!academicData[currentCourse].projects) academicData[currentCourse].projects = [];
+
+            if (editId >= 0) {
+                academicData[currentCourse].projects[editId] = projObj;
+            } else {
+                academicData[currentCourse].projects.push(projObj);
+            }
+
+            persistData();
+            closeModal('modal-project');
+            renderProjectsGrid();
+            alert("Project successfully saved with file deliverables.");
+        }
+
+        // ---------------------------------------------------------------------
+        // CRUD: CLASSROOM LEARNINGS
+        // ---------------------------------------------------------------------
+        function renderLearningsList() {
+            const list = document.getElementById("list-learnings");
+            const learnings = (academicData[currentCourse] && academicData[currentCourse].learnings) || [];
+            if (learnings.length === 0) {
+                list.innerHTML = `<div class="p-8 text-center text-kepler-muted font-mono text-xs">No lectures recorded. Click "Add Lecture Entry".</div>`;
+                return;
+            }
+            list.innerHTML = learnings.map((l, idx) => `
+                <div class="bg-kepler-black p-5 border border-kepler-darkborder flex items-center justify-between">
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-3 text-xs font-mono">
+                            <span class="text-kepler-orange font-bold">LECTURE 0${l.lecture}</span>
+                            <span class="text-kepler-muted">• ${l.date}</span>
+                        </div>
+                        <h4 class="font-serif text-lg text-white">${l.topic}</h4>
+                        <p class="text-xs text-kepler-muted line-clamp-1 font-light">${l.explanation}</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="editLearning(${idx})" class="p-2 hover:text-kepler-orange"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        <button onclick="deleteLearning(${idx})" class="p-2 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openLearningModal(editIndex = -1) {
+            document.getElementById("modal-learning").classList.remove("hidden");
+            if (editIndex >= 0) {
+                const l = academicData[currentCourse].learnings[editIndex];
+                document.getElementById("modal-learn-title").innerText = "Edit Lecture";
+                document.getElementById("learn-edit-idx").value = editIndex;
+                document.getElementById("learn-num").value = l.lecture;
+                document.getElementById("learn-date").value = l.date;
+                document.getElementById("learn-topic").value = l.topic;
+                document.getElementById("learn-explanation").value = l.explanation;
+                document.getElementById("learn-takeaways").value = (l.takeaways || []).join(', ');
+            } else {
+                document.getElementById("modal-learn-title").innerText = "Add Lecture Entry";
+                document.getElementById("learn-edit-idx").value = "-1";
+                document.getElementById("learn-num").value = (academicData[currentCourse].learnings.length + 1);
+                document.getElementById("learn-date").value = new Date().toISOString().split('T')[0];
+                document.getElementById("learn-topic").value = "";
+                document.getElementById("learn-explanation").value = "";
+                document.getElementById("learn-takeaways").value = "";
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function editLearning(idx) { openLearningModal(idx); }
+
+        function deleteLearning(idx) {
+            if (confirm("Delete this lecture?")) {
+                academicData[currentCourse].learnings.splice(idx, 1);
+                persistData();
+                renderLearningsList();
+            }
+        }
+
+        function saveLearning(e) {
+            e.preventDefault();
+            const editId = parseInt(document.getElementById("learn-edit-idx").value);
+            const lObj = {
+                lecture: parseInt(document.getElementById("learn-num").value),
+                date: document.getElementById("learn-date").value,
+                topic: document.getElementById("learn-topic").value,
+                explanation: document.getElementById("learn-explanation").value,
+                takeaways: document.getElementById("learn-takeaways").value.split(',').map(s => s.trim()).filter(Boolean),
+                notesUrl: "#notes",
+                pptUrl: "#slides"
+            };
+
+            if (editId >= 0) {
+                academicData[currentCourse].learnings[editId] = lObj;
+            } else {
+                academicData[currentCourse].learnings.push(lObj);
+            }
+
+            persistData();
+            closeModal('modal-learning');
+            renderLearningsList();
+            alert("Lecture recorded successfully.");
+        }
+
+        // ---------------------------------------------------------------------
+        // CRUD: RESOURCES
+        // ---------------------------------------------------------------------
+        function renderResourcesGrid() {
+            const grid = document.getElementById("grid-resources");
+            const resources = (academicData[currentCourse] && academicData[currentCourse].resources) || [];
+            if (resources.length === 0) {
+                grid.innerHTML = `<div class="col-span-full p-8 text-center text-kepler-muted font-mono text-xs">No resources uploaded. Click "Add Resource File".</div>`;
+                return;
+            }
+            grid.innerHTML = resources.map((r, idx) => `
+                <div class="bg-kepler-black p-5 border border-kepler-darkborder flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between font-mono text-[10px] text-kepler-orange pb-2 border-b border-kepler-darkborder">
+                            <span>${r.category}</span>
+                            <span class="text-white">${r.type} • ${r.size || '2.0 MB'}</span>
+                        </div>
+                        <h4 class="font-serif text-lg text-white mt-2">${r.title}</h4>
+                        <p class="text-xs text-kepler-muted line-clamp-2 mt-1">${r.desc || ''}</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 border-t border-kepler-darkborder font-mono text-xs">
+                        <span class="text-[10px] text-emerald-400">Verified File</span>
+                        <div class="space-x-2">
+                            <button onclick="editResource(${idx})" class="p-1 hover:text-kepler-orange"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="deleteResource(${idx})" class="p-1 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openResourceModal(editIndex = -1) {
+            document.getElementById("modal-resource").classList.remove("hidden");
+            if (editIndex >= 0) {
+                const r = academicData[currentCourse].resources[editIndex];
+                document.getElementById("modal-res-title").innerText = "Edit Resource";
+                document.getElementById("res-edit-idx").value = editIndex;
+                document.getElementById("res-title").value = r.title;
+                document.getElementById("res-category").value = r.category;
+                document.getElementById("res-type").value = r.type;
+                document.getElementById("res-size").value = r.size || "";
+                document.getElementById("res-desc").value = r.desc || "";
+                document.getElementById("res-url").value = r.url || "";
+            } else {
+                document.getElementById("modal-res-title").innerText = "Add Academic Resource";
+                document.getElementById("res-edit-idx").value = "-1";
+                document.getElementById("res-title").value = "";
+                document.getElementById("res-category").value = "Textbook";
+                document.getElementById("res-type").value = "PDF";
+                document.getElementById("res-size").value = "5.0 MB";
+                document.getElementById("res-desc").value = "";
+                document.getElementById("res-url").value = "";
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function editResource(idx) { openResourceModal(idx); }
+
+        function deleteResource(idx) {
+            if (confirm("Delete this resource file?")) {
+                academicData[currentCourse].resources.splice(idx, 1);
+                persistData();
+                renderResourcesGrid();
+            }
+        }
+
+        function saveResource(e) {
+            e.preventDefault();
+            const editId = parseInt(document.getElementById("res-edit-idx").value);
+            const rObj = {
+                title: document.getElementById("res-title").value,
+                category: document.getElementById("res-category").value,
+                type: document.getElementById("res-type").value,
+                size: document.getElementById("res-size").value,
+                desc: document.getElementById("res-desc").value,
+                url: document.getElementById("res-url").value || "#file"
+            };
+
+            if (editId >= 0) {
+                academicData[currentCourse].resources[editId] = rObj;
+            } else {
+                academicData[currentCourse].resources.push(rObj);
+            }
+
+            persistData();
+            closeModal('modal-resource');
+            renderResourcesGrid();
+            alert("Resource file saved.");
+        }
+
+        // ---------------------------------------------------------------------
+        // MODALS & CONFIGURATION
+        // ---------------------------------------------------------------------
+        function closeModal(id) {
+            document.getElementById(id).classList.add("hidden");
+        }
+
+        function openSupabaseConfigModal() {
+            document.getElementById("cfg-supabase-url").value = localStorage.getItem("supabase_url") || "";
+            document.getElementById("cfg-supabase-key").value = localStorage.getItem("supabase_key") || "";
+            document.getElementById("modal-supabase").classList.remove("hidden");
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function saveSupabaseConfig() {
+            const url = document.getElementById("cfg-supabase-url").value.trim();
+            const key = document.getElementById("cfg-supabase-key").value.trim();
+            if (url && key) {
+                localStorage.setItem("supabase_url", url);
+                localStorage.setItem("supabase_key", key);
+                alert("Supabase credentials configured. Live database sync activated.");
+            } else {
+                localStorage.removeItem("supabase_url");
+                localStorage.removeItem("supabase_key");
+                alert("Config cleared. Reverting to persistent local storage mode.");
+            }
+            closeModal("modal-supabase");
+        }
+
+        function exportDataJson() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(academicData, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `kepler_academic_backup_${Date.now()}.json`);
+            dlAnchor.click();
+        }
+
+        function resetToDefaults() {
+            if (confirm("Reset all six courses back to default university curriculum data?")) {
+                localStorage.removeItem("kepler_academic_data");
+                location.reload();
+            }
+        }
+
+        function initAdmin() {
+            loadAdminData();
+            renderActiveTab();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadAdminData();
+        });
+    </script>
+</body>
+
+</html>

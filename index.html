@@ -1,0 +1,1358 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aakarshan Indori // Academic Chronicles • 6-Course Portfolio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts from os-portfolio-chronicles: Space Grotesk, JetBrains Mono, Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS for In-Browser Excel (.xlsx, .xls, .csv) Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Mammoth for Word Document (.docx) In-Browser Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kepler: {
+                            orange: '#FF8900',
+                            orangeDark: '#E07800',
+                            orangeLight: '#FFF2E5',
+                            charcoal: '#242424',
+                            black: '#171717',
+                            white: '#FFFFFF',
+                            offwhite: '#F8F9FA',
+                            paper: '#F1F3F5',
+                            subtleborder: '#E9ECEF',
+                            darkborder: '#2A2A2A',
+                            muted: '#6C757D'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+                        body: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'glow': 'glow 3s ease-in-out infinite alternate',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'scale-in': 'scaleIn 0.4s ease-out forwards'
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-14px)' }
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 15px rgba(255, 137, 0, 0.2)' },
+                            '100%': { boxShadow: '0 0 30px rgba(255, 137, 0, 0.4)' }
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(12px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        scaleIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.97)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FFFFFF;
+            color: #171717;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .gradient-mesh {
+            background-image: 
+                radial-gradient(at 10% 15%, rgba(255, 137, 0, 0.08) 0px, transparent 50%),
+                radial-gradient(at 90% 20%, rgba(255, 137, 0, 0.05) 0px, transparent 50%),
+                radial-gradient(at 30% 80%, rgba(255, 137, 0, 0.06) 0px, transparent 50%);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #FF8900 0%, #E07800 60%, #171717 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(233, 236, 239, 0.9);
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 137, 0, 0.35);
+            box-shadow: 0 16px 36px -4px rgba(255, 137, 0, 0.08), 0 6px 12px -2px rgba(0, 0, 0, 0.04);
+        }
+
+        .is-scrolling-fast {
+            filter: blur(1.2px);
+            transition: filter 0.25s ease;
+        }
+
+        ::-webkit-scrollbar { width: 7px; }
+        ::-webkit-scrollbar-track { background: #F8F9FA; }
+        ::-webkit-scrollbar-thumb { background: #CED4DA; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #FF8900; }
+    </style>
+</head>
+<body class="selection:bg-kepler-orange selection:text-white min-h-screen relative overflow-x-hidden">
+
+    <!-- FLOATING AMBIENT MESH BACKGROUND -->
+    <div class="fixed inset-0 pointer-events-none z-0">
+        <div class="absolute inset-0 gradient-mesh"></div>
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-kepler-orange/10 rounded-full blur-[140px] animate-float"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-400/10 rounded-full blur-[140px] animate-float" style="animation-delay: 2s;"></div>
+    </div>
+
+    <!-- TOP HEADER / MASTHEAD -->
+    <header class="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-kepler-subtleborder transition-all">
+        <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="#hero" class="flex items-center space-x-3 group">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-kepler-orange to-kepler-orangeDark flex items-center justify-center text-white shadow-sm shadow-orange-500/20">
+                    <i data-lucide="layers" class="w-4 h-4"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-bold text-sm tracking-tight text-kepler-black group-hover:text-kepler-orange transition-colors">
+                        AAKARSHAN INDORI
+                    </span>
+                    <span class="font-mono text-[10px] text-kepler-muted tracking-wider uppercase">
+                        ACADEMIC CHRONICLES • 6 COURSES
+                    </span>
+                </div>
+            </a>
+
+            <!-- Quick Navigation -->
+            <nav class="hidden md:flex items-center space-x-8 font-mono text-xs text-kepler-muted uppercase tracking-wider">
+                <a href="#assignments-section" class="hover:text-kepler-orange transition-colors">Submissions</a>
+                <a href="#project-section" class="hover:text-kepler-orange transition-colors">Projects</a>
+                <a href="#certificates-section" class="hover:text-kepler-orange transition-colors">Certificates</a>
+            </nav>
+
+            <!-- Admin Button & Sync Badge -->
+            <div class="flex items-center space-x-3">
+                <div class="hidden sm:flex items-center space-x-2 text-[11px] font-mono text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>ACTIVE SEMESTER</span>
+                </div>
+                <a href="admin.html" class="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-kepler-black text-white hover:bg-kepler-orange hover:text-white transition-all duration-300 font-mono text-xs font-semibold shadow-sm hover:shadow-orange-500/20">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-kepler-orange"></i>
+                    <span>Admin Panel</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- SIX-COURSE SWITCHER STRIP (Updated with User Curriculum) -->
+    <div class="sticky top-20 z-40 bg-white/95 backdrop-blur-md border-b border-kepler-subtleborder overflow-x-auto no-scrollbar py-3 px-6 shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center space-x-2 min-w-[850px]">
+            <span class="font-mono text-xs text-kepler-muted uppercase mr-2 flex items-center">
+                <i data-lucide="folder-git-2" class="w-3.5 h-3.5 mr-1 text-kepler-orange"></i> Courses:
+            </span>
+            <button onclick="switchCourse('data-science')" id="tab-data-science" class="course-tab px-4 py-2 rounded-full font-mono text-xs font-medium transition-all duration-200 bg-kepler-orange text-white shadow-sm shadow-orange-500/20">
+                01. Data Science Foundation
+            </button>
+            <button onclick="switchCourse('artificial-intelligence')" id="tab-artificial-intelligence" class="course-tab px-4 py-2 rounded-full font-mono text-xs font-medium transition-all duration-200 bg-kepler-offwhite text-kepler-charcoal hover:bg-kepler-paper">
+                02. Artificial Intelligence
+            </button>
+            <button onclick="switchCourse('cloud-computing')" id="tab-cloud-computing" class="course-tab px-4 py-2 rounded-full font-mono text-xs font-medium transition-all duration-200 bg-kepler-offwhite text-kepler-charcoal hover:bg-kepler-paper">
+                03. Fundamentals of Cloud
+            </button>
+            <button onclick="switchCourse('entrepreneurship')" id="tab-entrepreneurship" class="course-tab px-4 py-2 rounded-full font-mono text-xs font-medium transition-all duration-200 bg-kepler-offwhite text-kepler-charcoal hover:bg-kepler-paper">
+                04. Entrepreneurship
+            </button>
+            <button onclick="switchCourse('internship-eval-1')" id="tab-internship-eval-1" class="course-tab px-4 py-2 rounded-full font-mono text-xs font-medium transition-all duration-200 bg-kepler-offwhite text-kepler-charcoal hover:bg-kepler-paper">
+                05. Internship -1
+            </button>
+            <button onclick="switchCourse('advanced-ai')" id="tab-advanced-ai" class="course-tab px-4 py-2 rounded-full font-mono text-xs font-medium transition-all duration-200 bg-kepler-offwhite text-kepler-charcoal hover:bg-kepler-paper">
+                06. Advanced AI (E-1)
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="relative z-10 max-w-6xl mx-auto px-6 py-12 space-y-24">
+
+        <!-- ========================================================================= -->
+        <!-- 1. HERO SECTION -->
+        <!-- ========================================================================= -->
+        <section id="hero" class="relative pt-10 pb-12 overflow-hidden">
+            <div class="absolute top-10 right-10 w-72 h-72 border border-kepler-orange/15 rounded-full animate-float pointer-events-none"></div>
+            <div class="absolute bottom-4 left-4 w-44 h-44 border border-kepler-muted/20 rounded-full animate-float pointer-events-none" style="animation-delay: 1.5s;"></div>
+
+            <div class="relative z-10 space-y-6">
+                <!-- Academic Portfolio Pill with Course Code & Faculty -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-kepler-orange/10 border border-kepler-orange/20 animate-fade-in">
+                    <i data-lucide="graduation-cap" class="w-4 h-4 text-kepler-orange"></i>
+                    <span id="hero-badge" class="text-xs font-mono font-semibold text-kepler-orange uppercase tracking-wider">
+                        BCS5403Y26 • Prof. Rushikesh Pawar
+                    </span>
+                </div>
+
+                <!-- Giant Typography -->
+                <h1 class="text-6xl sm:text-7xl md:text-8xl font-bold tracking-tight text-kepler-black leading-[1.05]">
+                    <span id="hero-title-gradient" class="gradient-text">Data Science</span><br/>
+                    <span id="hero-title-main" class="text-kepler-black">Foundation</span>
+                </h1>
+
+                <!-- Subtitle -->
+                <p id="hero-desc" class="text-lg sm:text-xl text-kepler-muted max-w-2xl font-body font-normal leading-relaxed">
+                    Comprehensive collection of academic coursework, evaluated problem sets, and capstone mini project.
+                </p>
+
+                <!-- Course Metadata Badges -->
+                <div class="flex flex-wrap gap-4 pt-2 font-mono text-xs">
+                    <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/90 backdrop-blur border border-kepler-subtleborder shadow-sm">
+                        <i data-lucide="tag" class="w-4 h-4 text-kepler-orange"></i>
+                        <span id="hero-meta-1" class="font-medium text-kepler-charcoal">Course Code: BCS5403Y26</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/90 backdrop-blur border border-kepler-subtleborder shadow-sm">
+                        <i data-lucide="user-check" class="w-4 h-4 text-amber-500"></i>
+                        <span id="hero-meta-2" class="font-medium text-kepler-charcoal">Faculty: Prof. Rushikesh Pawar</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/90 backdrop-blur border border-kepler-subtleborder shadow-sm">
+                        <i data-lucide="award" class="w-4 h-4 text-emerald-600"></i>
+                        <span class="font-medium text-kepler-charcoal">Aakarshan Indori</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- 2. ASSIGNMENTS / LABS SECTION -->
+        <!-- ========================================================================= -->
+        <section id="assignments-section" class="space-y-8 animate-fade-in">
+            <div class="flex items-center gap-4 pb-4 border-b border-kepler-subtleborder">
+                <div class="p-3.5 bg-gradient-to-br from-kepler-orange to-kepler-orangeDark rounded-2xl shadow-lg shadow-orange-500/20 text-white flex items-center justify-center">
+                    <i data-lucide="file-code-2" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h2 id="assignments-heading" class="text-3xl sm:text-4xl font-bold text-kepler-black tracking-tight">Assignments</h2>
+                    <p id="assignments-subheading" class="text-sm text-kepler-muted font-body mt-0.5">Core coursework submissions & evaluated problem sets</p>
+                </div>
+            </div>
+
+            <div id="assignments-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically Populated -->
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- 3. PROJECT / MINI PROJECT SECTION -->
+        <!-- ========================================================================= -->
+        <section id="project-section" class="space-y-8 animate-fade-in">
+            <div class="flex items-center gap-4 pb-4 border-b border-kepler-subtleborder">
+                <div class="p-3.5 bg-gradient-to-br from-amber-500 to-kepler-orange rounded-2xl shadow-lg shadow-orange-500/20 text-white flex items-center justify-center">
+                    <i data-lucide="lightbulb" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h2 id="project-section-title" class="text-3xl sm:text-4xl font-bold text-kepler-black tracking-tight">Mini Project</h2>
+                    <p id="project-section-subtitle" class="text-sm text-kepler-muted font-body mt-0.5">Practical coursework implementation & submission</p>
+                </div>
+            </div>
+
+            <div id="project-card-container">
+                <!-- Dynamically Populated -->
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- 4. PRESENTATION SECTION (Specifically for Internship -1) -->
+        <!-- ========================================================================= -->
+        <section id="presentation-section" class="space-y-8 animate-fade-in hidden">
+            <div class="flex items-center gap-4 pb-4 border-b border-kepler-subtleborder">
+                <div class="p-3.5 bg-gradient-to-br from-kepler-orange to-amber-500 rounded-2xl shadow-lg shadow-orange-500/20 text-white flex items-center justify-center">
+                    <i data-lucide="presentation" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-kepler-black tracking-tight">Technical Presentation & Defense</h2>
+                    <p class="text-sm text-kepler-muted font-body mt-0.5">Corporate practicum presentation defense & faculty viva</p>
+                </div>
+            </div>
+            <div id="presentation-card-container">
+                <!-- Dynamically Populated -->
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- 5. LIST OF WORKS SECTION -->
+        <!-- ========================================================================= -->
+        <section id="works-section" class="space-y-8 animate-fade-in">
+            <div class="flex items-center gap-4 pb-4 border-b border-kepler-subtleborder">
+                <div class="p-3.5 bg-gradient-to-br from-kepler-charcoal to-kepler-black rounded-2xl shadow-lg shadow-black/20 text-white flex items-center justify-center">
+                    <i data-lucide="folder-check" class="w-7 h-7 text-kepler-orange"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-kepler-black tracking-tight">List of Works</h2>
+                    <p class="text-sm text-kepler-muted font-body mt-0.5">Complete classroom lectures, notes & laboratory experiments</p>
+                </div>
+            </div>
+
+            <div id="works-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Dynamically Populated -->
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- 6. CERTIFICATES / VALUE-ADDED SECTION -->
+        <!-- ========================================================================= -->
+        <section id="certificates-section" class="space-y-8 animate-fade-in">
+            <div class="flex items-center gap-4 pb-4 border-b border-kepler-subtleborder">
+                <div class="p-3.5 bg-gradient-to-br from-kepler-orange via-amber-500 to-kepler-orangeDark rounded-2xl shadow-lg shadow-orange-500/20 text-white flex items-center justify-center">
+                    <i data-lucide="award" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h2 id="certificates-section-title" class="text-3xl sm:text-4xl font-bold text-kepler-black tracking-tight">Value Added Course</h2>
+                    <p class="text-sm text-kepler-muted font-body mt-0.5">Professional certifications, credentials & course achievements</p>
+                </div>
+            </div>
+
+            <div id="certificates-container">
+                <!-- Dynamically Populated -->
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- 7. LEARNING OUTCOMES -->
+        <!-- ========================================================================= -->
+        <section id="outcomes-section" class="space-y-8 animate-fade-in">
+            <div class="flex items-center gap-4 pb-4 border-b border-kepler-subtleborder">
+                <div class="p-3.5 bg-kepler-offwhite border border-kepler-subtleborder rounded-2xl text-kepler-charcoal flex items-center justify-center">
+                    <i data-lucide="target" class="w-7 h-7 text-kepler-orange"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-kepler-black tracking-tight">Learning Outcomes</h2>
+                    <p class="text-sm text-kepler-muted font-body mt-0.5">Bloom's taxonomy mastery level & practical applications</p>
+                </div>
+            </div>
+
+            <div id="outcomes-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 font-body">
+                <!-- Dynamically Populated -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="mt-32 border-t border-kepler-subtleborder bg-white/70 backdrop-blur-md py-16 px-6 relative z-10 font-mono text-xs text-kepler-muted">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div class="flex items-center space-x-3">
+                <div class="w-2.5 h-2.5 rounded-full bg-kepler-orange animate-pulse"></div>
+                <span class="font-bold text-kepler-charcoal uppercase tracking-wider">
+                    Aakarshan Indori • Academic Chronicles
+                </span>
+                <div class="w-2.5 h-2.5 rounded-full bg-kepler-orange animate-pulse"></div>
+            </div>
+            <div class="text-center sm:text-right">
+                <p>© 2026 Aakarshan Indori. All coursework verified.</p>
+                <div class="mt-2 space-x-4">
+                    <a href="admin.html" class="text-kepler-orange hover:underline font-bold">Admin Portal →</a>
+                    <a href="javascript:window.scrollTo({top:0,behavior:'smooth'})" class="hover:text-kepler-black">Back to Top ↑</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- DOCUMENT PREVIEW MODAL -->
+    <div id="preview-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-6 transition-all duration-300">
+        <div id="preview-modal-dialog" class="bg-white border border-kepler-subtleborder rounded-2xl max-w-6xl w-full flex flex-col shadow-2xl relative max-h-[94vh] h-[85vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-6 py-3.5 border-b border-kepler-subtleborder bg-kepler-offwhite shrink-0">
+                <div class="flex items-center space-x-3 truncate mr-4">
+                    <span class="w-9 h-9 rounded-xl bg-kepler-orange/15 text-kepler-orange flex items-center justify-center shrink-0">
+                        <i data-lucide="file-spreadsheet" id="modal-doc-icon" class="w-5 h-5"></i>
+                    </span>
+                    <div class="truncate">
+                        <h3 id="modal-doc-title" class="font-bold text-sm sm:text-base text-kepler-black truncate">Document Viewer</h3>
+                        <p id="modal-doc-subtitle" class="font-mono text-[11px] text-kepler-muted truncate">Interactive In-Browser Viewer</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 shrink-0">
+                    <a id="modal-doc-open-link" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-white border border-kepler-subtleborder hover:border-kepler-orange text-kepler-charcoal hover:text-kepler-orange text-xs font-mono font-medium flex items-center space-x-1.5 transition-colors" title="Open in new window">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        <span class="hidden sm:inline">New Tab</span>
+                    </a>
+                    <a id="modal-doc-download-link" href="#" download class="px-3 py-1.5 rounded-lg bg-white border border-kepler-subtleborder hover:border-kepler-orange text-kepler-charcoal hover:text-kepler-orange text-xs font-mono font-medium flex items-center space-x-1.5 transition-colors" title="Download original file">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span class="hidden sm:inline">Download</span>
+                    </a>
+                    <button onclick="toggleModalFullscreen()" class="p-1.5 rounded-lg bg-white border border-kepler-subtleborder hover:border-kepler-black text-kepler-muted hover:text-kepler-black transition-colors" title="Toggle Fullscreen">
+                        <i data-lucide="maximize-2" id="modal-fullscreen-icon" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="closeModal()" class="p-1.5 rounded-lg bg-white border border-kepler-subtleborder hover:bg-red-50 hover:text-red-600 text-kepler-muted transition-colors" title="Close (Esc)">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Modal Content Area -->
+            <div id="modal-body" class="p-4 sm:p-6 overflow-auto flex-1 bg-white">
+                <!-- Injected dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- CORE SCRIPT: DATA STORE & CONTROLLER -->
+    <script>
+        const COURSES_DATA = {
+            // 1. DATA SCIENCE FOUNDATION
+            "data-science": {
+                code: "BCS5403Y26",
+                name: "Data Science Foundation",
+                faculty: "Prof. Rushikesh Pawar",
+                badge: "BCS5403Y26 • Prof. Rushikesh Pawar",
+                gradientTitle: "Data Science",
+                mainTitle: "Foundation",
+                desc: "Comprehensive collection of coursework submissions, statistical feature engineering, and the capstone mini project.",
+                meta1: "Course Code: BCS5403Y26",
+                meta2: "Faculty: Prof. Rushikesh Pawar",
+                assignmentsTitle: "Assignments",
+                assignmentsSubtitle: "Core coursework submissions from university LMS",
+                assignments: [
+                    {
+                        title: "Assignment-Phase-01 Submission",
+                        desc: "Opened: Wed, 22 July 2026, 12:00 AM • Due: Fri, 24 July 2026, 3:00 PM",
+                        status: "Submitted",
+                        score: "Phase 01",
+                        url: "https://jmp.sh/TjycFeJg"
+                    },
+                    {
+                        title: "Level1 & Level 2 Submission",
+                        desc: "Opened: Tue, 28 July 2026, 12:00 AM • Due: Tue, 28 July 2026, 4:00 PM",
+                        status: "Submitted",
+                        score: "Level 1 & 2",
+                        url: "https://jmp.sh/q4LyG0Lr"
+                    },
+                    {
+                        title: "Final Submission - Level C Based on Assignment Doc",
+                        desc: "Opened: Wed, 29 July 2026, 2:00 PM • Due: Thu, 30 July 2026, 10:00 AM",
+                        status: "Graded",
+                        score: "Level C",
+                        url: "https://jmp.sh/Y2SVmx8O"
+                    }
+                ],
+                project: {
+                    sectionTitle: "Mini Project",
+                    sectionSubtitle: "Practical coursework implementation & submission",
+                    badge: "Mini Project Submission",
+                    title: "Submission - Mini Project",
+                    due: "Opened: Thu, 22 Oct 2026, 5:00 PM • Due: Fri, 23 Oct 2026, 10:00 AM",
+                    desc: "Comprehensive data science mini project implementing exploratory analysis, predictive modeling pipelines, and interactive evaluation dashboards.",
+                    tech: ["Python", "Pandas", "Scikit-Learn", "Matplotlib", "Jupyter Notebooks"],
+                    url: "https://jmp.sh/Lxt8ZCsR",
+                    github: "https://github.com/aakarshan-indori/data-science-mini-project",
+                    btnText: "View Mini Project"
+                },
+                listOfWorks: [
+                    {
+                        title: "Class Work & Theory Compilation",
+                        desc: "Detailed lecture notes, statistical proofs, and hypothesis testing coursework.",
+                        url: "https://jmp.sh/zTSQM3Di"
+                    },
+                    {
+                        title: "List of Experiments & Labs",
+                        desc: "Data science lab experiments, EDA notebooks, and model benchmarks.",
+                        url: "https://jmp.sh/nh8loE21"
+                    }
+                ],
+                certificates: null,
+                presentation: null,
+                outcomes: [
+                    { code: "CO-1", title: "Statistical Modeling", desc: "Formulate statistical likelihoods to quantify uncertainty across complex datasets." },
+                    { code: "CO-2", title: "Pipeline Architecture", desc: "Construct end-to-end data pipelines from data cleaning to model validation." },
+                    { code: "CO-3", title: "Empirical Validation", desc: "Decompose high-dimensional feature spaces and interpret model performance." }
+                ]
+            },
+
+            // 2. ARTIFICIAL INTELLIGENCE
+            "artificial-intelligence": {
+                code: "BCS5402Y26",
+                name: "Artificial Intelligence",
+                faculty: "Prof. Kamlesh Ahuja",
+                badge: "BCS5402Y26 • Prof. Kamlesh Ahuja",
+                gradientTitle: "Artificial",
+                mainTitle: "Intelligence & Stats",
+                desc: "Study of informed heuristic search, adversarial algorithms, and cognitive computing under Prof. Kamlesh Ahuja.",
+                meta1: "Course Code: BCS5402Y26",
+                meta2: "Faculty: Prof. Kamlesh Ahuja",
+                assignmentsTitle: "Assignments",
+                assignmentsSubtitle: "Coursework problem sets & heuristic search submissions",
+                assignments: [
+                    {
+                        title: "Assignment-I",
+                        desc: "Opened: Fri, 21 Aug 2026, 12:00 AM • Due: Wed, 26 Aug 2026, 12:00 AM",
+                        status: "Graded",
+                        score: "Assignment-I",
+                        url: "https://jmp.sh/TjycFeJg"
+                    },
+                    {
+                        title: "Assignment-II",
+                        desc: "Opened: Wed, 26 Aug 2026, 12:00 AM • Due: Thu, 3 Sep 2026, 12:00 AM",
+                        status: "Graded",
+                        score: "Assignment-II",
+                        url: "https://jmp.sh/q4LyG0Lr"
+                    }
+                ],
+                project: {
+                    sectionTitle: "Mini Project",
+                    sectionSubtitle: "Course Mini Project Deliverable",
+                    badge: "Mini Project Submission",
+                    title: "Mini Project Submission",
+                    due: "Opened: Wed, 26 Aug 2026, 12:00 AM • Due: Sun, 6 Sep 2026, 3:00 PM",
+                    desc: "Implementation of an autonomous heuristic search game-playing agent with state-space evaluation and algorithmic optimization.",
+                    tech: ["Python", "Search Heuristics", "Alpha-Beta Pruning", "PyTorch"],
+                    url: "https://jmp.sh/Lxt8ZCsR",
+                    github: "https://github.com/aakarshan-indori/ai-mini-project",
+                    btnText: "View Mini Project"
+                },
+                certificates: {
+                    sectionTitle: "Value Added Course",
+                    title: "Value added course certificate",
+                    due: "Opened: Fri, 21 Aug 2026, 10:00 AM • Due: Wed, 2 Sep 2026, 3:30 AM",
+                    desc: "Professional certification in artificial intelligence, neural networks, and statistical reasoning.",
+                    url: "https://jmp.sh/nt9rDh4c"
+                },
+                listOfWorks: [
+                    {
+                        title: "Class Work & Heuristic Proofs",
+                        desc: "Coursework on heuristic admissibility, consistency, and search tree bounds.",
+                        url: "https://jmp.sh/zTSQM3Di"
+                    },
+                    {
+                        title: "List of Practical Experiments",
+                        desc: "Lab experiments on constraint satisfaction, MDPs, and minimax algorithms.",
+                        url: "https://jmp.sh/nh8loE21"
+                    }
+                ],
+                presentation: null,
+                outcomes: [
+                    { code: "CO-1", title: "Search Heuristics", desc: "Design and prove admissibility for informed search heuristics in complex graphs." },
+                    { code: "CO-2", title: "Game Theory Engines", desc: "Synthesize adversarial decision agents operating under strict time constraints." },
+                    { code: "CO-3", title: "Machine Intelligence", desc: "Model probabilistic uncertainty using Bayesian networks and Markov spaces." }
+                ]
+            },
+
+            // 3. FUNDAMENTALS OF CLOUD
+            "cloud-computing": {
+                code: "BCS5401Y26",
+                name: "Fundamentals of Cloud",
+                faculty: "Prof. Sneha Talwalkar",
+                badge: "BCS5401Y26 • Prof. Sneha Talwalkar",
+                gradientTitle: "Fundamentals of",
+                mainTitle: "Cloud Computing",
+                desc: "Cloud infrastructure, Linux containerization, virtual networking, and server topologies under Prof. Sneha Talwalkar.",
+                meta1: "Course Code: BCS5401Y26",
+                meta2: "Faculty: Prof. Sneha Talwalkar",
+                assignmentsTitle: "Lab Assignments",
+                assignmentsSubtitle: "Practical laboratory coursework & FoCC instructions",
+                assignments: [
+                    {
+                        title: "Lab1",
+                        desc: "Opened: Fri, 9 Oct 2026, 12:00 PM • Due: Sat, 17 Oct 2026, 11:59 PM • Please see the attached file FoCC Lab1.docx for lab assignment instructions.",
+                        status: "Graded",
+                        score: "Lab 1",
+                        url: "https://jmp.sh/TjycFeJg"
+                    },
+                    {
+                        title: "Lab2",
+                        desc: "Opened: Wed, 14 Oct 2026, 10:00 AM • Due: Sat, 24 Oct 2026, 11:59 PM • Cloud virtualization and container setup.",
+                        status: "Graded",
+                        score: "Lab 2",
+                        url: "https://jmp.sh/q4LyG0Lr"
+                    },
+                    {
+                        title: "Lab3",
+                        desc: "Opened: Tue, 27 Oct 2026, 11:30 AM • Due: Fri, 30 Oct 2026, 11:59 PM • Cloud storage and serverless function deployment.",
+                        status: "Submitted",
+                        score: "Lab 3",
+                        url: "https://jmp.sh/Y2SVmx8O"
+                    }
+                ],
+                project: {
+                    sectionTitle: "Mini Project",
+                    sectionSubtitle: "Cloud infrastructure and containerization deliverable",
+                    badge: "Mini Project Submission",
+                    title: "Cloud Infrastructure & Containerization Mini Project",
+                    due: "Opened: Mon, 19 Oct 2026 • Due: Sat, 31 Oct 2026",
+                    desc: "Automated multi-tier container orchestration with Docker and Kubernetes, private network topologies, and Terraform infrastructure as code.",
+                    tech: ["Docker", "Kubernetes", "Linux Cgroups", "Terraform", "AWS"],
+                    url: "https://jmp.sh/Lxt8ZCsR",
+                    codeUrl: null,
+                    github: "https://github.com/aakarshan-indori/cloud-mini-project",
+                    btnText: "View Mini Project"
+                },
+                listOfWorks: [
+                    {
+                        title: "FoCC Lab Manual & Instructions",
+                        desc: "Complete laboratory procedures, topology configuration, and cloud commands.",
+                        url: "https://jmp.sh/zTSQM3Di"
+                    },
+                    {
+                        title: "Cloud Infrastructure Architecture",
+                        desc: "Diagrams for multi-tier deployments, object storage, and secure IAM policies.",
+                        url: "https://jmp.sh/nh8loE21"
+                    }
+                ],
+                certificates: null,
+                presentation: null,
+                outcomes: [
+                    { code: "CO-1", title: "Cloud Topologies", desc: "Design and implement scalable cloud infrastructure using modern primitives." },
+                    { code: "CO-2", title: "Containerization", desc: "Deploy containerized microservices with robust health checks and networking." },
+                    { code: "CO-3", title: "Resource Optimization", desc: "Analyze cloud compute costs, elasticity parameters, and security policies." }
+                ]
+            },
+
+            // 4. ENTREPRENEURSHIP
+            "entrepreneurship": {
+                code: "ENT-305",
+                name: "Entrepreneurship",
+                faculty: "Faculty Coordinator",
+                badge: "ENT-305 • Entrepreneurship",
+                gradientTitle: "Tech",
+                mainTitle: "Entrepreneurship",
+                desc: "Certified academic track in venture formulation, customer discovery validation, and business modeling.",
+                meta1: "Course: ENT-305",
+                meta2: "Certification Track",
+                assignments: null,
+                project: {
+                    sectionTitle: "Mini Project / Venture Plan",
+                    sectionSubtitle: "Entrepreneurial feasibility and venture pitch",
+                    badge: "Venture Deliverable",
+                    title: "Tech Venture Pitch & Business Financial Model",
+                    due: "Official Capstone Deliverable",
+                    desc: "Comprehensive technological venture feasibility analysis, customer discovery field studies, B2B SaaS unit economics modeling, and seed pitch deck.",
+                    tech: ["Financial Modeling", "Market Analysis", "B2B SaaS Unit Economics", "Pitch Deck"],
+                    url: "https://jmp.sh/Lxt8ZCsR",
+                    codeUrl: null,
+                    github: "",
+                    btnText: "View Venture Deliverable"
+                },
+                listOfWorks: null,
+                certificates: {
+                    sectionTitle: "Certificates",
+                    title: "Value-Added Entrepreneurship Certificate",
+                    due: "Official University Academic Credential",
+                    desc: "Professional certified credential for technological enterprise formulation, unit economics modeling, customer discovery interviews, and seed pitch defense.",
+                    url: "https://jmp.sh/nt9rDh4c"
+                },
+                presentation: null,
+                outcomes: null
+            },
+
+            // 5. INTERNSHIP -1
+            "internship-eval-1": {
+                code: "BCS5601Y26",
+                name: "Internship -1",
+                faculty: "Prof. Neha Mangal",
+                badge: "BCS5601Y26 • Prof. Neha Mangal",
+                gradientTitle: "Internship -1",
+                mainTitle: "Evaluation",
+                desc: "Formal industrial practicum presentation defense, deliverables review, and supervisor evaluation under Prof. Neha Mangal.",
+                meta1: "Course Code: BCS5601Y26",
+                meta2: "Faculty: Prof. Neha Mangal",
+                assignments: null,
+                project: {
+                    sectionTitle: "Practicum Deliverable & Engineering Report",
+                    sectionSubtitle: "Industrial practicum deliverables and technical report",
+                    badge: "Practicum Deliverable",
+                    title: "Corporate Engineering Deliverables & Viva Report",
+                    due: "Official Evaluation Deliverable",
+                    desc: "Full industrial practicum report defending production engineering deliverables, sprint achievements, architectural RFCs, and mentorship evaluation.",
+                    tech: ["Production Systems", "Architecture RFCs", "Sprint Cadences", "Enterprise Microservices"],
+                    url: "https://jmp.sh/TjycFeJg",
+                    codeUrl: null,
+                    github: "https://github.com/aakarshan-indori/internship-deliverables",
+                    btnText: "View Practicum Report"
+                },
+                listOfWorks: null,
+                certificates: null,
+                outcomes: null,
+                presentation: {
+                    title: "Internship -1 Technical Presentation & Viva Defense",
+                    subtitle: "Executive Defense & Faculty Evaluation",
+                    desc: "Official corporate practicum presentation deck defending production engineering deliverables, sprint achievements, architectural RFCs, and industry mentorship evaluation.",
+                    url: "https://jmp.sh/TjycFeJg",
+                    slidesUrl: "https://jmp.sh/presentation"
+                }
+            },
+
+            // 6. ADVANCED AI (E-1)
+            "advanced-ai": {
+                code: "BCS5551Y26",
+                name: "Advanced Artificial Intelligence (E-1)",
+                faculty: "Prof. Jitendra Choudhary",
+                badge: "BCS5551Y26 • Prof. Jitendra Choudhary",
+                gradientTitle: "Advanced AI",
+                mainTitle: "Elective (E-1)",
+                desc: "Exploration of deep generative architectures, self-attention dynamics, and transformer models under Prof. Jitendra Choudhary.",
+                meta1: "Course Code: BCS5551Y26",
+                meta2: "Faculty: Prof. Jitendra Choudhary",
+                assignmentsTitle: "Assignments",
+                assignmentsSubtitle: "Advanced AI problem sets & implementation assignments",
+                assignments: [
+                    {
+                        title: "Assignment 1: Transformer & Self-Attention Implementation",
+                        desc: "Decoder-only architecture coded from scratch with rotary position embeddings and KV caching.",
+                        status: "Graded",
+                        score: "99%",
+                        url: "https://jmp.sh/TjycFeJg"
+                    },
+                    {
+                        title: "Assignment 2: Diffusion Sampling & Fine-Tuning LoRA",
+                        desc: "Denoising Diffusion Probabilistic Models (DDPM) reverse step and parameter-efficient fine-tuning.",
+                        status: "Submitted",
+                        score: "Pending",
+                        url: "https://jmp.sh/q4LyG0Lr"
+                    }
+                ],
+                project: {
+                    sectionTitle: "Capstone Project",
+                    sectionSubtitle: "Advanced AI Prototype",
+                    badge: "Advanced Deliverable",
+                    title: "NeuroForge: Latent Diffusion Image Synthesis",
+                    desc: "Custom parameter latent diffusion model trained with classifier-free guidance, optimized with Triton CUDA kernels.",
+                    tech: ["PyTorch", "CUDA", "Triton", "Weights & Biases"],
+                    url: "https://jmp.sh/Lxt8ZCsR",
+                    github: "https://github.com/aakarshan-indori/advanced-ai-project",
+                    btnText: "Explore Project"
+                },
+                listOfWorks: [
+                    {
+                        title: "Theoretical Derivations & RFCs",
+                        desc: "Variational Lower Bound (ELBO) derivations, score matching, and LoRA rank proofs.",
+                        url: "https://jmp.sh/zTSQM3Di"
+                    },
+                    {
+                        title: "List of GPU Lab Experiments",
+                        desc: "Multi-GPU distributed training logs, gradient checkpointing, and evaluations.",
+                        url: "https://jmp.sh/nh8loE21"
+                    }
+                ],
+                certificates: null,
+                presentation: null,
+                outcomes: [
+                    { code: "CO-1", title: "Attention Scaling", desc: "Derive and code multi-head self-attention mechanisms with custom memory caching." },
+                    { code: "CO-2", title: "Generative Diffusion", desc: "Formulate Langevin reverse score-matching neural estimators for synthesis." }
+                ]
+            }
+        };
+
+        let currentCourseId = "data-science";
+
+        // -------------------------------------------------------------------------
+        // RENDER ACTIVE COURSE
+        // -------------------------------------------------------------------------
+        function renderCourse(cid) {
+            const c = COURSES_DATA[cid];
+            if (!c) return;
+
+            // 1. Hero Updates
+            document.getElementById("hero-badge").innerText = c.badge;
+            document.getElementById("hero-title-gradient").innerText = c.gradientTitle;
+            document.getElementById("hero-title-main").innerText = c.mainTitle;
+            document.getElementById("hero-desc").innerText = c.desc;
+            document.getElementById("hero-meta-1").innerText = c.meta1;
+            document.getElementById("hero-meta-2").innerText = c.meta2;
+
+            // 2. Assignments Section
+            const asgSec = document.getElementById("assignments-section");
+            if (c.assignments && c.assignments.length > 0) {
+                asgSec.classList.remove("hidden");
+                document.getElementById("assignments-heading").innerText = c.assignmentsTitle || "Assignments";
+                document.getElementById("assignments-subheading").innerText = c.assignmentsSubtitle || "Core coursework submissions";
+                const asgContainer = document.getElementById("assignments-grid");
+                asgContainer.innerHTML = c.assignments.map((a, idx) => `
+                    <div class="glass-card rounded-2xl p-6 flex flex-col justify-between group relative overflow-hidden">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between text-xs font-mono">
+                                <span class="inline-flex items-center gap-1.5 text-kepler-orange font-semibold">
+                                    <span class="w-2 h-2 rounded-full bg-kepler-orange animate-pulse"></span>
+                                    Item 0${idx + 1}
+                                </span>
+                                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${a.status === 'Graded' ? 'bg-orange-100 text-kepler-orangeDark' : 'bg-emerald-50 text-emerald-600'}">
+                                    ${a.score ? `${a.status}: ${a.score}` : a.status}
+                                </span>
+                            </div>
+                            <h3 class="text-xl font-bold text-kepler-black group-hover:text-kepler-orange transition-colors">
+                                ${a.title}
+                            </h3>
+                            <p class="text-xs text-kepler-muted font-body leading-relaxed">
+                                ${a.desc}
+                            </p>
+                        </div>
+                        <div class="pt-6 mt-4 border-t border-kepler-subtleborder">
+                            <button onclick="openDocumentViewer('${a.url.replace(/'/g, "\\'")}', '${a.title.replace(/'/g, "\\'")}')" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-kepler-orange to-kepler-orangeDark hover:from-kepler-orangeDark hover:to-kepler-orange text-white font-mono text-xs font-semibold flex items-center justify-center space-x-2 shadow-sm shadow-orange-500/20 group-hover:shadow-md transition-all">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                <span>View Document</span>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                asgSec.classList.add("hidden");
+            }
+
+            // 3. Project / Mini Project Section
+            const projSec = document.getElementById("project-section");
+            if (c.project) {
+                projSec.classList.remove("hidden");
+                const p = c.project;
+                document.getElementById("project-section-title").innerText = p.sectionTitle || "Mini Project";
+                document.getElementById("project-section-subtitle").innerText = p.sectionSubtitle || "Practical coursework implementation";
+                
+                document.getElementById("project-card-container").innerHTML = `
+                    <div class="glass-card rounded-2xl p-8 sm:p-10 group relative overflow-hidden">
+                        <div class="space-y-4 max-w-3xl">
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-xs font-mono text-amber-600 font-semibold">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                <span>${p.badge || 'Mini Project Deliverable'}</span>
+                            </div>
+                            <h3 class="text-3xl sm:text-4xl font-bold text-kepler-black group-hover:text-kepler-orange transition-colors">
+                                ${p.title}
+                            </h3>
+                            ${p.due ? `<p class="font-mono text-xs text-kepler-orange font-semibold">${p.due}</p>` : ''}
+                            <p class="text-base text-kepler-muted font-body leading-relaxed">
+                                ${p.desc}
+                            </p>
+                            <div class="flex flex-wrap gap-2 pt-2">
+                                ${(p.tech || []).map(t => `<span class="px-3 py-1 bg-kepler-offwhite border border-kepler-subtleborder rounded-lg text-xs font-mono text-kepler-charcoal font-medium">${t}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="pt-8 mt-8 border-t border-kepler-subtleborder flex flex-wrap items-center gap-4">
+                            <button onclick="openDocumentViewer('${(p.url || p.fileUrl || p.live || '#').replace(/'/g, "\\'")}', '${p.title.replace(/'/g, "\\'")}')" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-kepler-orange to-kepler-orangeDark text-white font-mono text-sm font-semibold flex items-center justify-center space-x-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] transition-all">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                <span>${p.btnText || 'View Mini Project'}</span>
+                            </button>
+                            ${p.codeUrl ? `
+                            <button onclick="openDocumentViewer('${p.codeUrl.replace(/'/g, "\\'")}', 'Deliverable: ${p.title.replace(/'/g, "\\'")}')" class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-800 font-mono text-xs font-semibold flex items-center justify-center space-x-2 transition-all">
+                                <i data-lucide="code-2" class="w-4 h-4 text-emerald-600"></i>
+                                <span>View Project Code / File</span>
+                            </button>
+                            ` : ''}
+                            ${p.github ? `
+                            <a href="${p.github}" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-kepler-offwhite border border-kepler-subtleborder hover:border-kepler-black text-kepler-black font-mono text-xs font-medium flex items-center justify-center space-x-2 transition-colors">
+                                <i data-lucide="github" class="w-4 h-4"></i>
+                                <span>GitHub Repository</span>
+                            </a>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                projSec.classList.add("hidden");
+            }
+
+            // 4. Presentation Section (For Internship -1)
+            const presSec = document.getElementById("presentation-section");
+            if (c.presentation) {
+                presSec.classList.remove("hidden");
+                const pr = c.presentation;
+                document.getElementById("presentation-card-container").innerHTML = `
+                    <div class="glass-card rounded-2xl p-8 sm:p-10 group relative overflow-hidden">
+                        <div class="space-y-4 max-w-3xl">
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-xs font-mono text-kepler-orange font-semibold">
+                                <i data-lucide="presentation" class="w-3.5 h-3.5"></i>
+                                <span>${pr.subtitle}</span>
+                            </div>
+                            <h3 class="text-3xl sm:text-4xl font-bold text-kepler-black group-hover:text-kepler-orange transition-colors">
+                                ${pr.title}
+                            </h3>
+                            <p class="text-base text-kepler-muted font-body leading-relaxed">
+                                ${pr.desc}
+                            </p>
+                        </div>
+                        <div class="pt-8 mt-8 border-t border-kepler-subtleborder flex flex-col sm:flex-row items-center gap-4">
+                            <button onclick="openDocumentViewer('${pr.url.replace(/'/g, "\\'")}', '${pr.title.replace(/'/g, "\\'")}')" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-kepler-orange to-kepler-orangeDark text-white font-mono text-sm font-semibold flex items-center justify-center space-x-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] transition-all">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                <span>View Presentation Deck</span>
+                            </button>
+                            <a href="${pr.slidesUrl || pr.url}" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-kepler-offwhite border border-kepler-subtleborder hover:border-kepler-black text-kepler-black font-mono text-xs font-medium flex items-center justify-center space-x-2 transition-colors">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span>Download Slides (.pptx)</span>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            } else {
+                presSec.classList.add("hidden");
+            }
+
+            // 5. List of Works Section
+            const worksSec = document.getElementById("works-section");
+            if (c.listOfWorks && c.listOfWorks.length > 0) {
+                worksSec.classList.remove("hidden");
+                document.getElementById("works-grid").innerHTML = c.listOfWorks.map(w => `
+                    <div class="glass-card rounded-2xl p-6 sm:p-8 flex flex-col justify-between group">
+                        <div class="space-y-3">
+                            <div class="inline-flex items-center gap-1.5 text-xs font-mono text-kepler-charcoal font-semibold">
+                                <span class="w-2 h-2 rounded-full bg-kepler-charcoal"></span>
+                                Coursework Documentation
+                            </div>
+                            <h3 class="text-2xl font-bold text-kepler-black group-hover:text-kepler-orange transition-colors">
+                                ${w.title}
+                            </h3>
+                            <p class="text-sm text-kepler-muted font-body leading-relaxed">
+                                ${w.desc}
+                            </p>
+                        </div>
+                        <div class="pt-6 mt-6 border-t border-kepler-subtleborder">
+                            <button onclick="openDocumentViewer('${w.url.replace(/'/g, "\\'")}', '${w.title.replace(/'/g, "\\'")}')" class="w-full py-2.5 px-4 rounded-xl bg-kepler-charcoal hover:bg-kepler-orange text-white font-mono text-xs font-semibold flex items-center justify-center space-x-2 transition-all">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                <span>View Work</span>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                worksSec.classList.add("hidden");
+            }
+
+            // 6. Certificates Section
+            const certSec = document.getElementById("certificates-section");
+            if (c.certificates) {
+                certSec.classList.remove("hidden");
+                const cert = c.certificates;
+                document.getElementById("certificates-section-title").innerText = cert.sectionTitle || "Certificates";
+                document.getElementById("certificates-container").innerHTML = `
+                    <div class="glass-card rounded-2xl p-8 sm:p-10 group max-w-3xl">
+                        <div class="space-y-3">
+                            <div class="inline-flex items-center gap-1.5 text-xs font-mono text-kepler-orange font-semibold">
+                                <i data-lucide="award" class="w-3.5 h-3.5"></i>
+                                <span>Verified Credentials</span>
+                            </div>
+                            <h3 class="text-2xl sm:text-3xl font-bold text-kepler-black group-hover:text-kepler-orange transition-colors">
+                                ${cert.title}
+                            </h3>
+                            ${cert.due ? `<p class="font-mono text-xs text-kepler-orange font-semibold">${cert.due}</p>` : ''}
+                            <p class="text-base text-kepler-muted font-body leading-relaxed">
+                                ${cert.desc}
+                            </p>
+                        </div>
+                        <div class="pt-6 mt-6 border-t border-kepler-subtleborder">
+                            <button onclick="openDocumentViewer('${cert.url.replace(/'/g, "\\'")}', '${cert.title.replace(/'/g, "\\'")}')" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-kepler-orange to-amber-500 text-white font-mono text-sm font-semibold flex items-center justify-center space-x-2 shadow-md shadow-orange-500/20 hover:scale-[1.01] transition-all">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                <span>View Certificate</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                certSec.classList.add("hidden");
+            }
+
+            // 7. Learning Outcomes Section
+            const outSec = document.getElementById("outcomes-section");
+            if (c.outcomes && c.outcomes.length > 0) {
+                outSec.classList.remove("hidden");
+                document.getElementById("outcomes-grid").innerHTML = c.outcomes.map(o => `
+                    <div class="glass-card rounded-2xl p-6 space-y-3">
+                        <div class="flex items-center justify-between text-xs font-mono">
+                            <span class="text-kepler-orange font-bold">${o.code}</span>
+                            <span class="text-kepler-muted uppercase font-medium">Blooms Level 5-6</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-kepler-black">${o.title}</h4>
+                        <p class="text-xs text-kepler-muted leading-relaxed">${o.desc}</p>
+                    </div>
+                `).join('');
+            } else {
+                outSec.classList.add("hidden");
+            }
+
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // SWITCH COURSE HANDLER
+        // -------------------------------------------------------------------------
+        function switchCourse(cid) {
+            currentCourseId = cid;
+
+            document.querySelectorAll(".course-tab").forEach(tab => {
+                tab.classList.remove("bg-kepler-orange", "text-white", "shadow-sm", "shadow-orange-500/20");
+                tab.classList.add("bg-kepler-offwhite", "text-kepler-charcoal");
+            });
+
+            const activeBtn = document.getElementById(`tab-${cid}`);
+            if (activeBtn) {
+                activeBtn.classList.add("bg-kepler-orange", "text-white", "shadow-sm", "shadow-orange-500/20");
+                activeBtn.classList.remove("bg-kepler-offwhite", "text-kepler-charcoal");
+            }
+
+            renderCourse(cid);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function closeModal() {
+            const modal = document.getElementById("preview-modal");
+            if (modal) modal.classList.add("hidden");
+            document.body.classList.remove("overflow-hidden");
+        }
+
+        let isFullscreenModal = false;
+        function toggleModalFullscreen() {
+            const dialog = document.getElementById("preview-modal-dialog");
+            const icon = document.getElementById("modal-fullscreen-icon");
+            isFullscreenModal = !isFullscreenModal;
+            if (isFullscreenModal) {
+                dialog.classList.remove("max-w-6xl", "h-[85vh]", "rounded-2xl");
+                dialog.classList.add("w-full", "h-full", "max-h-screen", "rounded-none");
+                if (icon) icon.setAttribute("data-lucide", "minimize-2");
+            } else {
+                dialog.classList.add("max-w-6xl", "h-[85vh]", "rounded-2xl");
+                dialog.classList.remove("w-full", "h-full", "max-h-screen", "rounded-none");
+                if (icon) icon.setAttribute("data-lucide", "maximize-2");
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") closeModal();
+        });
+
+        async function openDocumentViewer(url, title = 'Document Viewer') {
+            if (!url || url === '#' || url === '') {
+                alert("No document file or URL provided.");
+                return;
+            }
+
+            const modal = document.getElementById("preview-modal");
+            const modalBody = document.getElementById("modal-body");
+            const modalTitle = document.getElementById("modal-doc-title");
+            const modalSubtitle = document.getElementById("modal-doc-subtitle");
+            const modalIcon = document.getElementById("modal-doc-icon");
+            const openLink = document.getElementById("modal-doc-open-link");
+            const downloadLink = document.getElementById("modal-doc-download-link");
+
+            if (modalTitle) modalTitle.innerText = title;
+            if (openLink) openLink.href = url;
+            if (downloadLink) {
+                downloadLink.href = url;
+                const fname = url.split('/').pop().split('?')[0] || 'document';
+                downloadLink.setAttribute('download', fname);
+            }
+
+            modal.classList.remove("hidden");
+            document.body.classList.add("overflow-hidden");
+
+            const cleanUrl = url.split('?')[0].split('#')[0];
+            const ext = cleanUrl.split('.').pop().toLowerCase();
+            const fileName = cleanUrl.split('/').pop();
+
+            if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Loading preview...`;
+
+            modalBody.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-24 space-y-4">
+                    <div class="w-10 h-10 border-4 border-kepler-orange border-t-transparent rounded-full animate-spin"></div>
+                    <p class="font-mono text-xs text-kepler-muted">Opening and rendering ${fileName} directly in browser...</p>
+                </div>
+            `;
+
+            try {
+                // 1. EXCEL SPREADSHEETS (.xlsx, .xls, .csv)
+                if (['xlsx', 'xls', 'csv'].includes(ext)) {
+                    if (modalIcon) modalIcon.setAttribute("data-lucide", "file-spreadsheet");
+                    if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Interactive Spreadsheet Table`;
+
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Could not load spreadsheet (HTTP ${response.status})`);
+                    const arrayBuffer = await response.arrayBuffer();
+
+                    if (typeof XLSX === 'undefined') {
+                        throw new Error("Spreadsheet engine is initializing, please click again in a moment.");
+                    }
+
+                    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                    const sheetNames = workbook.SheetNames;
+
+                    if (!sheetNames || sheetNames.length === 0) {
+                        modalBody.innerHTML = `<div class="p-8 text-center text-kepler-muted">Spreadsheet is empty or has no sheets.</div>`;
+                        return;
+                    }
+
+                    window._currentWorkbook = workbook;
+                    window.renderExcelSheetTab = function(sheetName) {
+                        const ws = window._currentWorkbook.Sheets[sheetName];
+                        const html = XLSX.utils.sheet_to_html(ws, { id: 'excel-data-table', editable: false });
+
+                        const tabsHtml = sheetNames.length > 1 ? `
+                            <div class="flex items-center gap-2 border-b border-kepler-subtleborder pb-3 mb-4 overflow-x-auto">
+                                <span class="text-xs font-mono text-kepler-muted uppercase mr-1">Sheets:</span>
+                                ${sheetNames.map(s => `
+                                    <button onclick="renderExcelSheetTab('${s}')" class="px-3 py-1.5 rounded-lg font-mono text-xs font-semibold transition-all ${s === sheetName ? 'bg-kepler-orange text-white shadow-sm shadow-orange-500/20' : 'bg-kepler-offwhite text-kepler-charcoal hover:bg-kepler-paper'}">
+                                        ${s}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : '';
+
+                        modalBody.innerHTML = `
+                            <div class="flex flex-col h-full space-y-3">
+                                ${tabsHtml}
+                                <div class="flex items-center justify-between text-xs font-mono text-kepler-muted pb-1">
+                                    <span class="flex items-center gap-1.5 text-emerald-600 font-bold">
+                                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Active Sheet: ${sheetName}
+                                    </span>
+                                    <span>${(arrayBuffer.byteLength / 1024).toFixed(1)} KB</span>
+                                </div>
+                                <div class="overflow-auto border border-kepler-subtleborder rounded-xl shadow-inner bg-white max-h-[68vh]">
+                                    ${html}
+                                </div>
+                            </div>
+                        `;
+
+                        // Clean Excel grid styling
+                        const table = document.getElementById("excel-data-table");
+                        if (table) {
+                            table.className = "min-w-full text-xs font-mono border-collapse border border-slate-300";
+                            table.querySelectorAll("td, th").forEach(cell => {
+                                cell.className = "border border-slate-200 px-3 py-2 text-slate-800 whitespace-nowrap hover:bg-amber-50/50 transition-colors";
+                            });
+                            const firstRow = table.querySelector("tr");
+                            if (firstRow) {
+                                firstRow.querySelectorAll("td, th").forEach(th => {
+                                    th.className = "border border-slate-300 bg-slate-100 font-bold px-3 py-2.5 text-slate-900 sticky top-0 shadow-sm z-10";
+                                });
+                            }
+                        }
+                        if (window.lucide) lucide.createIcons();
+                    };
+
+                    window.renderExcelSheetTab(sheetNames[0]);
+                    return;
+                }
+
+                // 2. WORD DOCUMENTS (.docx)
+                if (ext === 'docx') {
+                    if (modalIcon) modalIcon.setAttribute("data-lucide", "file-text");
+                    if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Document View`;
+
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Could not load document (HTTP ${response.status})`);
+                    const arrayBuffer = await response.arrayBuffer();
+
+                    if (typeof mammoth !== 'undefined') {
+                        const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
+                        modalBody.innerHTML = `
+                            <div class="max-w-3xl mx-auto p-8 bg-white rounded-xl border border-kepler-subtleborder shadow-sm max-h-[72vh] overflow-y-auto font-sans leading-relaxed text-kepler-charcoal prose prose-slate">
+                                ${result.value}
+                            </div>
+                        `;
+                        if (window.lucide) lucide.createIcons();
+                        return;
+                    }
+                }
+
+                // 3. PDF DOCUMENTS (.pdf)
+                if (ext === 'pdf') {
+                    if (modalIcon) modalIcon.setAttribute("data-lucide", "file-text");
+                    if (modalSubtitle) modalSubtitle.innerText = `${fileName} • PDF Viewer`;
+
+                    modalBody.innerHTML = `
+                        <div class="w-full h-[74vh] rounded-xl overflow-hidden border border-kepler-subtleborder bg-slate-100">
+                            <iframe src="${url}#toolbar=1" class="w-full h-full border-none" title="${title}"></iframe>
+                        </div>
+                    `;
+                    if (window.lucide) lucide.createIcons();
+                    return;
+                }
+
+                // 4. IMAGES (.png, .jpg, .jpeg, .svg, .webp)
+                if (['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'].includes(ext)) {
+                    if (modalIcon) modalIcon.setAttribute("data-lucide", "image");
+                    if (modalSubtitle) modalSubtitle.innerText = `${fileName} • High-Res Image`;
+
+                    modalBody.innerHTML = `
+                        <div class="flex items-center justify-center p-4 max-h-[74vh] overflow-auto">
+                            <img src="${url}" alt="${title}" class="max-h-[70vh] max-w-full object-contain rounded-xl shadow-lg border border-kepler-subtleborder">
+                        </div>
+                    `;
+                    if (window.lucide) lucide.createIcons();
+                    return;
+                }
+
+                // 5. CODE / TEXT / JUPYTER (.py, .ipynb, .json, .txt, .sql, .md)
+                if (['txt', 'py', 'ipynb', 'json', 'sql', 'md'].includes(ext)) {
+                    if (modalIcon) modalIcon.setAttribute("data-lucide", "code");
+                    if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Source View`;
+
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const text = await response.text();
+                        const safeText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        modalBody.innerHTML = `
+                            <div class="bg-kepler-black text-emerald-400 p-6 rounded-xl max-h-[72vh] overflow-auto font-mono text-xs border border-kepler-darkborder leading-relaxed">
+                                <pre><code>${safeText}</code></pre>
+                            </div>
+                        `;
+                        if (window.lucide) lucide.createIcons();
+                        return;
+                    }
+                }
+
+                // 6. EXTERNAL URL FALLBACK (Jumpshare, External links)
+                if (modalIcon) modalIcon.setAttribute("data-lucide", "external-link");
+                if (modalSubtitle) modalSubtitle.innerText = `External Academic Resource`;
+                modalBody.innerHTML = `
+                    <div class="py-12 px-6 text-center space-y-4 max-w-md mx-auto">
+                        <div class="w-16 h-16 mx-auto rounded-full bg-kepler-orange/10 flex items-center justify-center text-kepler-orange shadow-sm">
+                            <i data-lucide="external-link" class="w-8 h-8"></i>
+                        </div>
+                        <h4 class="font-bold text-xl text-kepler-black">${title}</h4>
+                        <p class="text-xs text-kepler-muted font-body leading-relaxed">
+                            This academic deliverable is linked to an external cloud platform or service. Click below to open directly in a new window.
+                        </p>
+                        <div class="pt-4 flex items-center justify-center gap-3">
+                            <a href="${url}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-xl bg-kepler-orange hover:bg-kepler-orangeDark text-white font-mono text-xs font-bold transition-all flex items-center gap-2 shadow-md shadow-orange-500/20">
+                                <span>Open Deliverable</span>
+                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+                if (window.lucide) lucide.createIcons();
+
+            } catch (err) {
+                console.error("Document viewer error:", err);
+                modalBody.innerHTML = `
+                    <div class="py-12 px-6 text-center space-y-4 max-w-md mx-auto">
+                        <div class="w-14 h-14 mx-auto rounded-full bg-red-50 text-red-500 flex items-center justify-center">
+                            <i data-lucide="alert-circle" class="w-7 h-7"></i>
+                        </div>
+                        <h4 class="font-bold text-base text-kepler-black">Unable to render inline viewer</h4>
+                        <p class="text-xs text-kepler-muted">${err.message}</p>
+                        <div class="pt-2 flex items-center justify-center gap-3">
+                            <a href="${url}" target="_blank" class="px-5 py-2.5 bg-kepler-black text-white text-xs font-mono font-bold rounded-xl hover:bg-kepler-orange transition-colors">
+                                Open in Tab
+                            </a>
+                            <a href="${url}" download class="px-5 py-2.5 bg-kepler-offwhite border border-kepler-subtleborder text-kepler-black text-xs font-mono font-bold rounded-xl hover:border-kepler-black transition-colors">
+                                Download File
+                            </a>
+                        </div>
+                    </div>
+                `;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        // Velocity blur
+        let lastY = window.scrollY;
+        let blurTimer;
+        window.addEventListener('scroll', () => {
+            const dy = Math.abs(window.scrollY - lastY);
+            lastY = window.scrollY;
+            if (dy > 40) {
+                document.body.classList.add('is-scrolling-fast');
+            }
+            clearTimeout(blurTimer);
+            blurTimer = setTimeout(() => {
+                document.body.classList.remove('is-scrolling-fast');
+            }, 80);
+        }, { passive: true });
+
+        async function syncAcademicData() {
+            try {
+                const res = await fetch('/api/get-data');
+                if (res.ok) {
+                    const data = await res.json();
+                    for (const cid in data) {
+                        if (COURSES_DATA[cid]) {
+                            if (data[cid].assignments && data[cid].assignments.length > 0) {
+                                COURSES_DATA[cid].assignments = data[cid].assignments.map(a => ({
+                                    title: a.title,
+                                    desc: a.desc,
+                                    status: a.status || 'Graded',
+                                    score: a.score || '',
+                                    url: a.questionUrl || 'https://jmp.sh/TjycFeJg'
+                                }));
+                            }
+                            if (data[cid].projects && data[cid].projects.length > 0) {
+                                const p = data[cid].projects[0];
+                                if (!COURSES_DATA[cid].project) {
+                                    COURSES_DATA[cid].project = {
+                                        sectionTitle: "Mini Project",
+                                        sectionSubtitle: "Coursework Deliverable",
+                                        badge: "Mini Project Deliverable",
+                                        tech: [],
+                                        btnText: "View Mini Project"
+                                    };
+                                }
+                                COURSES_DATA[cid].project.title = p.title;
+                                COURSES_DATA[cid].project.desc = p.desc;
+                                COURSES_DATA[cid].project.subtitle = p.subtitle || COURSES_DATA[cid].project.subtitle;
+                                COURSES_DATA[cid].project.tech = p.tech || COURSES_DATA[cid].project.tech || [];
+                                COURSES_DATA[cid].project.url = p.fileUrl || p.live || COURSES_DATA[cid].project.url;
+                                COURSES_DATA[cid].project.codeUrl = p.codeUrl || null;
+                                COURSES_DATA[cid].project.github = p.github || COURSES_DATA[cid].project.github;
+                            }
+                        }
+                    }
+                }
+            } catch(e) {
+                const saved = localStorage.getItem("kepler_academic_data");
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        for (const cid in parsed) {
+                            if (COURSES_DATA[cid] && parsed[cid].assignments && parsed[cid].assignments.length > 0) {
+                                COURSES_DATA[cid].assignments = parsed[cid].assignments.map(a => ({
+                                    title: a.title,
+                                    desc: a.desc,
+                                    status: a.status || 'Graded',
+                                    score: a.score || '',
+                                    url: a.questionUrl || 'https://jmp.sh/TjycFeJg'
+                                }));
+                            }
+                            if (COURSES_DATA[cid] && parsed[cid].projects && parsed[cid].projects.length > 0) {
+                                const p = parsed[cid].projects[0];
+                                if (!COURSES_DATA[cid].project) {
+                                    COURSES_DATA[cid].project = {
+                                        sectionTitle: "Mini Project",
+                                        sectionSubtitle: "Coursework Deliverable",
+                                        badge: "Mini Project Deliverable",
+                                        tech: [],
+                                        btnText: "View Mini Project"
+                                    };
+                                }
+                                COURSES_DATA[cid].project.title = p.title;
+                                COURSES_DATA[cid].project.desc = p.desc;
+                                COURSES_DATA[cid].project.subtitle = p.subtitle || COURSES_DATA[cid].project.subtitle;
+                                COURSES_DATA[cid].project.tech = p.tech || COURSES_DATA[cid].project.tech || [];
+                                COURSES_DATA[cid].project.url = p.fileUrl || p.live || COURSES_DATA[cid].project.url;
+                                COURSES_DATA[cid].project.codeUrl = p.codeUrl || null;
+                                COURSES_DATA[cid].project.github = p.github || COURSES_DATA[cid].project.github;
+                            }
+                        }
+                    } catch(err) {}
+                }
+            }
+            renderCourse(currentCourseId);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            syncAcademicData();
+            if (window.lucide) lucide.createIcons();
+        });
+        window.addEventListener('storage', syncAcademicData);
+    </script>
+</body>
+</html>

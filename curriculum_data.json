@@ -1,0 +1,300 @@
+{
+  "data-science": {
+    "assignments": [
+      {
+        "num": 1,
+        "title": "Assignment-Phase-01 Submission",
+        "desc": "Opened: Wed, 22 July 2026, 12:00 AM • Due: Fri, 24 July 2026, 3:00 PM",
+        "deadline": "2026-07-24T15:00",
+        "status": "Submitted",
+        "score": "Phase 1",
+        "weight": "20%",
+        "questionUrl": "/uploads/1795340902033_Aakarshan_30_Observations__1_.xlsx",
+        "solutionUrl": null
+      },
+      {
+        "num": 2,
+        "title": "Level1 & Level 2 Submission",
+        "desc": "Opened: Tue, 28 July 2026, 12:00 AM • Due: Tue, 28 July 2026, 4:00 PM",
+        "deadline": "2026-07-28T16:00",
+        "status": "Submitted",
+        "score": "Level 1 & 2",
+        "weight": "20%",
+        "questionUrl": "/uploads/1795409126459_PU02424EUG10001_Aakarshan-indori_level1_level2___1_.pdf",
+        "solutionUrl": null
+      },
+      {
+        "num": 3,
+        "title": "Final Submission - Level C Based on Assignment Doc",
+        "desc": "Opened: Wed, 29 July 2026, 2:00 PM • Due: Thu, 30 July 2026, 10:00 AM",
+        "deadline": "2026-07-30T10:00",
+        "status": "Graded",
+        "score": "Level C",
+        "weight": "20%",
+        "questionUrl": "/uploads/1795409162807_PU02424EUG10001_Aakarshan-indori_level3__1_.pdf",
+        "solutionUrl": null
+      }
+    ],
+    "projects": [
+      {
+        "title": "Submission - Mini Project",
+        "subtitle": "Practical Coursework Mini Project",
+        "desc": "Due: Fri, 23 Oct 2026, 10:00 AM. End-to-end data science application: feature store, statistical modeling, and interactive dashboards.",
+        "tech": [
+          "Python",
+          "Pandas",
+          "Scikit-Learn",
+          "Matplotlib"
+        ],
+        "live": "https://jmp.sh/Lxt8ZCsR",
+        "github": "https://github.com/aakarshan-indori/data-science-mini-project",
+        "fileUrl": "https://jmp.sh/Lxt8ZCsR",
+        "codeUrl": ""
+      }
+    ],
+    "learnings": [
+      {
+        "lecture": 1,
+        "date": "2026-08-01",
+        "topic": "Exploratory Data Analysis & Feature Transforms",
+        "explanation": "Data cleaning, statistical feature transformation, and baseline modeling.",
+        "takeaways": [
+          "EDA",
+          "Feature Engineering"
+        ]
+      }
+    ],
+    "resources": [
+      {
+        "title": "Data Science Foundation Lab Manual",
+        "category": "Handbook",
+        "type": "PDF",
+        "size": "4.5 MB",
+        "url": "#"
+      }
+    ]
+  },
+  "artificial-intelligence": {
+    "assignments": [
+      {
+        "num": 1,
+        "title": "Assignment-I",
+        "desc": "Opened: Fri, 21 Aug 2026, 12:00 AM • Due: Wed, 26 Aug 2026, 12:00 AM",
+        "deadline": "2026-08-26T00:00",
+        "status": "Graded",
+        "score": "Assignment-I",
+        "weight": "25%",
+        "questionUrl": "https://jmp.sh/TjycFeJg"
+      },
+      {
+        "num": 2,
+        "title": "Assignment-II",
+        "desc": "Opened: Wed, 26 Aug 2026, 12:00 AM • Due: Thu, 3 Sep 2026, 12:00 AM",
+        "deadline": "2026-09-03T00:00",
+        "status": "Graded",
+        "score": "Assignment-II",
+        "weight": "25%",
+        "questionUrl": "https://jmp.sh/q4LyG0Lr"
+      }
+    ],
+    "projects": [
+      {
+        "title": "Mini Project Submission",
+        "subtitle": "Course Mini Project Deliverable",
+        "desc": "Due: Sun, 6 Sep 2026, 3:00 PM. Autonomous heuristic game-playing agent and decision engine.",
+        "tech": [
+          "Python",
+          "Search Heuristics",
+          "Alpha-Beta"
+        ],
+        "live": "https://jmp.sh/Lxt8ZCsR",
+        "fileUrl": "https://jmp.sh/Lxt8ZCsR",
+        "codeUrl": ""
+      }
+    ],
+    "learnings": [
+      {
+        "lecture": 1,
+        "date": "2026-08-15",
+        "topic": "Informed Heuristic Search & Admissibility",
+        "explanation": "Proofs of admissibility in A* and D* Lite algorithms.",
+        "takeaways": [
+          "A*",
+          "Heuristics"
+        ]
+      }
+    ],
+    "resources": [
+      {
+        "title": "Value added course certificate",
+        "category": "Certificate",
+        "type": "PDF",
+        "size": "1.2 MB",
+        "url": "https://jmp.sh/nt9rDh4c"
+      }
+    ]
+  },
+  "cloud-computing": {
+    "assignments": [
+      {
+        "num": 1,
+        "title": "Lab1",
+        "desc": "Opened: Fri, 9 Oct 2026, 12:00 PM • Due: Sat, 17 Oct 2026, 11:59 PM • Please see the attached file FoCC Lab1.docx for lab assignment instructions.",
+        "deadline": "2026-10-17T23:59",
+        "status": "Graded",
+        "score": "Lab 1",
+        "weight": "20%",
+        "questionUrl": "https://jmp.sh/TjycFeJg"
+      },
+      {
+        "num": 2,
+        "title": "Lab2",
+        "desc": "Opened: Wed, 14 Oct 2026, 10:00 AM • Due: Sat, 24 Oct 2026, 11:59 PM",
+        "deadline": "2026-10-24T23:59",
+        "status": "Graded",
+        "score": "Lab 2",
+        "weight": "20%",
+        "questionUrl": "https://jmp.sh/q4LyG0Lr"
+      },
+      {
+        "num": 3,
+        "title": "Lab3",
+        "desc": "Opened: Tue, 27 Oct 2026, 11:30 AM • Due: Fri, 30 Oct 2026, 11:59 PM",
+        "deadline": "2026-10-30T23:59",
+        "status": "Submitted",
+        "score": "Lab 3",
+        "weight": "20%",
+        "questionUrl": "https://jmp.sh/Y2SVmx8O"
+      }
+    ],
+    "projects": [
+      {
+        "title": "Cloud Infrastructure & Containerization Mini Project",
+        "subtitle": "FoCC Practical Capstone",
+        "desc": "Automated multi-tier container orchestration, ingress networking, and Infrastructure as Code deployment.",
+        "tech": [
+          "Docker",
+          "Kubernetes",
+          "Linux Cgroups",
+          "Terraform",
+          "AWS"
+        ],
+        "fileUrl": "https://jmp.sh/Lxt8ZCsR",
+        "codeUrl": "",
+        "live": "https://jmp.sh/Lxt8ZCsR",
+        "github": "https://github.com/aakarshan-indori/cloud-mini-project"
+      }
+    ],
+    "learnings": [
+      {
+        "lecture": 1,
+        "date": "2026-10-01",
+        "topic": "Virtualization & Containerization",
+        "explanation": "Linux namespaces, cgroups, and container runtimes.",
+        "takeaways": [
+          "Containers",
+          "Docker"
+        ]
+      }
+    ],
+    "resources": [
+      {
+        "title": "FoCC Lab1.docx Instructions",
+        "category": "Handbook",
+        "type": "DOCX",
+        "size": "2.1 MB",
+        "url": "#"
+      }
+    ]
+  },
+  "entrepreneurship": {
+    "assignments": [],
+    "projects": [
+      {
+        "title": "Tech Venture Pitch & Business Financial Model",
+        "subtitle": "Entrepreneurial Capstone Deliverable",
+        "desc": "Comprehensive technological venture proposition, customer validation interviews, unit economics, and seed round investor deck.",
+        "tech": [
+          "Financial Modeling",
+          "Market Analysis",
+          "B2B SaaS Unit Economics",
+          "Pitch Deck"
+        ],
+        "fileUrl": "https://jmp.sh/Lxt8ZCsR",
+        "codeUrl": "",
+        "live": "https://jmp.sh/Lxt8ZCsR",
+        "github": ""
+      }
+    ],
+    "learnings": [],
+    "resources": [
+      {
+        "title": "Value-Added Entrepreneurship Certificate",
+        "category": "Certificate",
+        "type": "PDF",
+        "size": "1.8 MB",
+        "url": "https://jmp.sh/nt9rDh4c"
+      }
+    ]
+  },
+  "internship-eval-1": {
+    "assignments": [],
+    "projects": [
+      {
+        "title": "Internship -1 Technical Presentation & Viva Defense",
+        "subtitle": "Executive Defense & Evaluation",
+        "desc": "Corporate engineering deliverables, sprint achievements, and viva defense under Prof. Neha Mangal.",
+        "tech": [
+          "Corporate Practicum",
+          "Architecture RFCs"
+        ],
+        "live": "https://jmp.sh/TjycFeJg",
+        "fileUrl": "https://jmp.sh/TjycFeJg",
+        "codeUrl": ""
+      }
+    ],
+    "learnings": [],
+    "resources": []
+  },
+  "advanced-ai": {
+    "assignments": [
+      {
+        "num": 1,
+        "title": "Assignment 1: Transformer & Self-Attention Implementation",
+        "desc": "Decoder-only GPT architecture coded from scratch with rotary position embeddings.",
+        "deadline": "2026-10-15T23:59",
+        "status": "Graded",
+        "score": "99%",
+        "weight": "25%",
+        "questionUrl": "https://jmp.sh/TjycFeJg"
+      },
+      {
+        "num": 2,
+        "title": "Assignment 2: Diffusion Sampling & Fine-Tuning LoRA",
+        "desc": "Denoising Diffusion Probabilistic Models (DDPM) reverse step and fine-tuning.",
+        "deadline": "2026-11-10T23:59",
+        "status": "Submitted",
+        "score": "Pending",
+        "weight": "25%",
+        "questionUrl": "https://jmp.sh/q4LyG0Lr"
+      }
+    ],
+    "projects": [
+      {
+        "title": "NeuroForge: Latent Diffusion Image Synthesis",
+        "subtitle": "Advanced AI Prototype",
+        "desc": "Custom 1.2B parameter latent diffusion model trained with classifier-free guidance.",
+        "tech": [
+          "PyTorch",
+          "CUDA",
+          "Triton"
+        ],
+        "live": "https://jmp.sh/Lxt8ZCsR",
+        "fileUrl": "https://jmp.sh/Lxt8ZCsR",
+        "codeUrl": ""
+      }
+    ],
+    "learnings": [],
+    "resources": []
+  }
+}
