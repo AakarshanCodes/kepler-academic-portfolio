@@ -109,3 +109,4 @@ const KeplerDB = (function() {
         getAcademicData
     };
 })();
+

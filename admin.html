@@ -305,13 +305,13 @@
                             class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
                     </div>
                     <div>
-                        <label class="block text-kepler-muted uppercase mb-1">Status</label>
+                        <label class="block text-kepler-muted uppercase mb-1">Status / Deliverable Phase</label>
                         <select id="asg-status"
                             class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
-                            <option value="Pending">Pending</option>
+                            <option value="Submission">Submission (Submitted)</option>
+                            <option value="Graded">Graded (Evaluated)</option>
                             <option value="In Progress">In Progress</option>
-                            <option value="Submitted">Submitted</option>
-                            <option value="Graded">Graded</option>
+                            <option value="Pending">Pending</option>
                         </select>
                     </div>
                 </div>
@@ -402,6 +402,22 @@
                     <label class="block text-kepler-muted uppercase mb-1">Project Thumbnail Image URL</label>
                     <input type="text" id="proj-image" placeholder="https://images.unsplash.com/..."
                         class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">Status / Deliverable Phase</label>
+                        <select id="proj-status"
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                            <option value="Submission">Submission (Mini Project Submission)</option>
+                            <option value="Graded">Graded (Evaluated)</option>
+                            <option value="In Progress">In Progress</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-kepler-muted uppercase mb-1">Score / Evaluation (Optional)</label>
+                        <input type="text" id="proj-score" placeholder="e.g. 98.5 / 100 or Grade A"
+                            class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                    </div>
                 </div>
                 <div class="border-t border-kepler-darkborder pt-4">
                     <label class="block text-kepler-orange uppercase mb-1">Upload Project Report / Document (PDF / DOCX / XLSX)</label>
@@ -713,7 +729,7 @@
             if (submitBtn) {
                 origBtnText = submitBtn.innerHTML;
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '⏳ Uploading Document... Please wait';
+                submitBtn.innerHTML = '⏳ Saving Document... Please wait';
                 submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
             }
 
@@ -721,44 +737,47 @@
 
             try {
                 let savedUrl = null;
+                const isLocalHost = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-                // 1. Try server upload first if running with backend
-                try {
-                    const reader = new FileReader();
-                    const base64Promise = new Promise((resolve) => {
-                        reader.onload = (e) => resolve(e.target.result.split(',')[1]);
-                        reader.readAsDataURL(file);
-                    });
-                    const base64 = await base64Promise;
+                // 1. Try server upload ONLY IF on local node server
+                if (isLocalHost) {
+                    try {
+                        const reader = new FileReader();
+                        const base64Promise = new Promise((resolve) => {
+                            reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+                            reader.readAsDataURL(file);
+                        });
+                        const base64 = await base64Promise;
 
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 3500);
-                    const res = await fetch('/api/upload', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ filename: file.name, base64: base64 }),
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 4000);
+                        const res = await fetch('/api/upload', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ filename: file.name, base64: base64 }),
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
 
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data.success && data.url) {
-                            savedUrl = data.url;
-                            if (statusDiv) statusDiv.innerHTML = `<span class="text-emerald-400 font-mono text-xs font-bold">✓ Uploaded to server: ${data.url}</span>`;
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.success && data.url) {
+                                savedUrl = data.url;
+                                if (statusDiv) statusDiv.innerHTML = `<span class="text-emerald-400 font-mono text-xs font-bold">✓ Uploaded to server: ${data.url}</span>`;
+                            }
                         }
+                    } catch (netErr) {
+                        console.log("Local server upload failed, falling back to KeplerDB", netErr);
                     }
-                } catch (netErr) {
-                    console.log("Server /api/upload not reachable (Static GitHub Pages mode)");
                 }
 
-                // 2. Save directly to client IndexedDB for static hosts (GitHub Pages)
+                // 2. Save directly to client IndexedDB for static hosts (GitHub Pages) or fallback
                 if (!savedUrl && window.KeplerDB) {
                     try {
                         const idbRes = await KeplerDB.saveFile(file);
                         if (idbRes && idbRes.url) {
                             savedUrl = idbRes.url;
-                            if (statusDiv) statusDiv.innerHTML = `<span class="text-emerald-400 font-mono text-xs font-bold">✓ Saved to browser library (${file.name})</span>`;
+                            if (statusDiv) statusDiv.innerHTML = `<span class="text-emerald-400 font-mono text-xs font-bold">✓ Stored in browser library (${file.name})</span>`;
                         }
                     } catch (idbErr) {
                         console.error("KeplerDB save failed", idbErr);
@@ -806,16 +825,17 @@
                 } catch(err) {}
             }
 
-            // Check localStorage and KeplerDB
+            // Check KeplerDB first (unlimited), then localStorage
             let localData = null;
-            try {
-                const saved = localStorage.getItem("kepler_academic_data");
-                if (saved) localData = JSON.parse(saved);
-            } catch(e) {}
-
-            if (!localData && window.KeplerDB) {
+            if (window.KeplerDB) {
                 try {
                     localData = await KeplerDB.getAcademicData();
+                } catch(e) {}
+            }
+            if (!localData) {
+                try {
+                    const saved = localStorage.getItem("kepler_academic_data");
+                    if (saved) localData = JSON.parse(saved);
                 } catch(e) {}
             }
 
@@ -858,20 +878,26 @@
             if (window.KeplerDB) {
                 try {
                     await KeplerDB.setAcademicData(academicData);
+                    syncSuccess = true;
                 } catch(e) {}
             }
 
-            try {
-                const res = await fetch('/api/save-data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(academicData)
-                });
-                if (res.ok) {
-                    syncSuccess = true;
+            const isLocalHost = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+            if (isLocalHost) {
+                try {
+                    const res = await fetch('/api/save-data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(academicData)
+                    });
+                    if (res.ok) {
+                        syncSuccess = true;
+                    }
+                } catch (e) {
+                    console.log("Local save error", e);
                 }
-            } catch (e) {
-                console.log("Static host / GitHub Pages mode active");
+            } else {
+                syncSuccess = true; // On GitHub Pages, IndexedDB is our primary persistent database
             }
             window.dispatchEvent(new Event('storage'));
             return syncSuccess;
@@ -958,7 +984,7 @@
                     <td class="p-4 text-kepler-orange font-bold">0${a.num}</td>
                     <td class="p-4 font-sans font-medium text-white">${a.title}</td>
                     <td class="p-4 text-kepler-muted">${new Date(a.deadline).toLocaleDateString()}</td>
-                    <td class="p-4"><span class="px-2 py-0.5 text-[10px] font-bold ${a.status === 'Graded' ? 'bg-kepler-orange text-kepler-black' : a.status === 'Submitted' ? 'bg-emerald-600 text-white' : 'bg-kepler-black text-kepler-muted'}">${a.status}</span></td>
+                    <td class="p-4"><span class="px-2 py-0.5 text-[10px] font-bold ${a.status === 'Graded' ? 'bg-kepler-orange text-kepler-black' : (a.status === 'Submitted' || a.status === 'Submission') ? 'bg-emerald-600 text-white' : 'bg-kepler-black text-kepler-muted'}">${a.status}</span></td>
                     <td class="p-4 text-kepler-offwhite">${a.score || '—'}</td>
                     <td class="p-4 text-kepler-muted text-[10px]">${a.questionUrl ? `<a href="javascript:void(0)" onclick="openAdminDoc('${(a.questionUrl || '').replace(/'/g, "\\'")}')" class="text-kepler-orange hover:underline font-mono font-semibold">Doc ↗</a>` : '—'} | ${a.solutionUrl ? `<a href="javascript:void(0)" onclick="openAdminDoc('${(a.solutionUrl || '').replace(/'/g, "\\'")}')" class="text-emerald-400 hover:underline font-mono font-semibold">Code ↗</a>` : '—'}</td>
                     <td class="p-4 text-right space-x-2">
@@ -987,7 +1013,7 @@
                 document.getElementById("asg-title").value = a.title;
                 document.getElementById("asg-desc").value = a.desc;
                 document.getElementById("asg-deadline").value = a.deadline ? a.deadline.slice(0, 16) : "";
-                document.getElementById("asg-status").value = a.status;
+                document.getElementById("asg-status").value = (a.status === 'Submitted' || a.status === 'Submission') ? 'Submission' : (a.status || 'Graded');
                 document.getElementById("asg-score").value = a.score || "";
                 document.getElementById("asg-weight").value = a.weight || "";
                 document.getElementById("asg-question-url").value = a.questionUrl || "";
@@ -1001,7 +1027,7 @@
                 document.getElementById("asg-title").value = "";
                 document.getElementById("asg-desc").value = "";
                 document.getElementById("asg-deadline").value = "2026-11-30T23:59";
-                document.getElementById("asg-status").value = "In Progress";
+                document.getElementById("asg-status").value = "Submission";
                 document.getElementById("asg-score").value = "";
                 document.getElementById("asg-weight").value = "20%";
                 document.getElementById("asg-question-url").value = "";
@@ -1123,6 +1149,8 @@
                 document.getElementById("proj-code-status").innerHTML = p.codeUrl ? `<span class="text-emerald-400 font-mono text-[11px]">Current Code: ${p.codeUrl.startsWith('data:') ? 'Embedded Document' : p.codeUrl.startsWith('idb://') ? ('Stored File: ' + (p.codeUrl.split('_').slice(2).join('_') || p.codeUrl)) : p.codeUrl}</span>` : "";
                 document.getElementById("proj-github").value = p.github || "";
                 document.getElementById("proj-live").value = p.live || "";
+                document.getElementById("proj-status").value = p.status || (p.badge && p.badge.includes('Graded') ? 'Graded' : 'Submission');
+                document.getElementById("proj-score").value = p.score || "";
             } else {
                 document.getElementById("modal-proj-title").innerText = "Add Project";
                 document.getElementById("proj-edit-idx").value = "-1";
@@ -1140,6 +1168,8 @@
                 document.getElementById("proj-code-status").innerHTML = "";
                 document.getElementById("proj-github").value = "";
                 document.getElementById("proj-live").value = "";
+                document.getElementById("proj-status").value = "Submission";
+                document.getElementById("proj-score").value = "";
             }
             if (window.lucide) lucide.createIcons();
         }
@@ -1160,6 +1190,8 @@
             const fileUrl = document.getElementById("proj-file-url").value.trim();
             const codeUrl = document.getElementById("proj-code-url").value.trim();
             const liveUrl = document.getElementById("proj-live").value.trim();
+            const projStatus = document.getElementById("proj-status").value;
+            const projScore = document.getElementById("proj-score").value.trim();
 
             const projObj = {
                 title: document.getElementById("proj-title").value.trim(),
@@ -1171,7 +1203,10 @@
                 fileUrl: fileUrl,
                 codeUrl: codeUrl,
                 github: document.getElementById("proj-github").value.trim(),
-                live: liveUrl || fileUrl
+                live: liveUrl || fileUrl,
+                status: projStatus,
+                score: projScore,
+                badge: projStatus === 'Graded' ? (projScore ? `Graded • ${projScore}` : 'Graded') : 'Mini Project Submission'
             };
 
             if (!academicData[currentCourse]) academicData[currentCourse] = { assignments: [], projects: [], learnings: [], resources: [] };

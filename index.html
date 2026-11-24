@@ -781,7 +781,25 @@
                 document.getElementById("assignments-heading").innerText = c.assignmentsTitle || "Assignments";
                 document.getElementById("assignments-subheading").innerText = c.assignmentsSubtitle || "Core coursework submissions";
                 const asgContainer = document.getElementById("assignments-grid");
-                asgContainer.innerHTML = c.assignments.map((a, idx) => `
+                asgContainer.innerHTML = c.assignments.map((a, idx) => {
+                    const isGraded = a.status === 'Graded';
+                    const isSubmission = a.status === 'Submission' || a.status === 'Submitted';
+                    const badgeClass = isGraded 
+                        ? 'bg-orange-100 text-kepler-orangeDark border border-orange-200' 
+                        : isSubmission 
+                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                        : 'bg-slate-100 text-slate-600 border border-slate-200';
+                    const badgeText = isGraded 
+                        ? (a.score ? `Graded: ${a.score}` : 'Graded')
+                        : isSubmission
+                        ? (a.score && a.score !== a.title ? `Submission • ${a.score}` : 'Submission')
+                        : (a.status || 'Submission');
+
+                    const hasBoth = a.solutionUrl && a.questionUrl && a.solutionUrl !== a.questionUrl;
+                    const primaryUrl = a.solutionUrl || a.url || a.questionUrl || '';
+                    const primaryBtnLabel = a.solutionUrl ? 'View Submission' : 'View Document';
+
+                    return `
                     <div class="glass-card rounded-2xl p-6 flex flex-col justify-between group relative overflow-hidden">
                         <div class="space-y-3">
                             <div class="flex items-center justify-between text-xs font-mono">
@@ -789,8 +807,8 @@
                                     <span class="w-2 h-2 rounded-full bg-kepler-orange animate-pulse"></span>
                                     Item 0${idx + 1}
                                 </span>
-                                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${a.status === 'Graded' ? 'bg-orange-100 text-kepler-orangeDark' : 'bg-emerald-50 text-emerald-600'}">
-                                    ${a.score ? `${a.status}: ${a.score}` : a.status}
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">
+                                    ${badgeText}
                                 </span>
                             </div>
                             <h3 class="text-xl font-bold text-kepler-black group-hover:text-kepler-orange transition-colors">
@@ -800,14 +818,21 @@
                                 ${a.desc}
                             </p>
                         </div>
-                        <div class="pt-6 mt-4 border-t border-kepler-subtleborder">
-                            <button onclick="openDocumentViewer('${a.url.replace(/'/g, "\\'")}', '${a.title.replace(/'/g, "\\'")}')" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-kepler-orange to-kepler-orangeDark hover:from-kepler-orangeDark hover:to-kepler-orange text-white font-mono text-xs font-semibold flex items-center justify-center space-x-2 shadow-sm shadow-orange-500/20 group-hover:shadow-md transition-all">
+                        <div class="pt-6 mt-4 border-t border-kepler-subtleborder flex flex-wrap gap-2">
+                            <button onclick="openDocumentViewer('${primaryUrl.replace(/'/g, "\\'")}', '${a.title.replace(/'/g, "\\'")}')" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-kepler-orange to-kepler-orangeDark hover:from-kepler-orangeDark hover:to-kepler-orange text-white font-mono text-xs font-semibold flex items-center justify-center space-x-2 shadow-sm shadow-orange-500/20 group-hover:shadow-md transition-all">
                                 <i data-lucide="eye" class="w-4 h-4"></i>
-                                <span>View Document</span>
+                                <span>${primaryBtnLabel}</span>
                             </button>
+                            ${hasBoth ? `
+                            <button onclick="openDocumentViewer('${a.questionUrl.replace(/'/g, "\\'")}', '${a.title.replace(/'/g, "\\'")} - Question Paper')" class="py-2.5 px-3 rounded-xl bg-kepler-offwhite hover:bg-kepler-paper border border-kepler-subtleborder text-kepler-charcoal font-mono text-xs font-medium flex items-center justify-center space-x-1.5 transition-all" title="View Question Document">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5 text-kepler-muted"></i>
+                                <span>Question Paper</span>
+                            </button>
+                            ` : ''}
                         </div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
             } else {
                 asgSec.classList.add("hidden");
             }
@@ -817,15 +842,24 @@
             if (c.project) {
                 projSec.classList.remove("hidden");
                 const p = c.project;
+                const isProjectGraded = p.status === 'Graded';
+                const projectBadgeClass = isProjectGraded 
+                    ? 'bg-orange-50 border border-orange-200 text-kepler-orange'
+                    : 'bg-emerald-50 border border-emerald-200 text-emerald-600';
+                const projectPulseClass = isProjectGraded ? 'bg-kepler-orange' : 'bg-emerald-500';
+                const projectBadgeText = isProjectGraded 
+                    ? (p.score ? `Graded • ${p.score}` : 'Graded Mini Project')
+                    : (p.badge || 'Mini Project Submission');
+
                 document.getElementById("project-section-title").innerText = p.sectionTitle || "Mini Project";
                 document.getElementById("project-section-subtitle").innerText = p.sectionSubtitle || "Practical coursework implementation";
                 
                 document.getElementById("project-card-container").innerHTML = `
                     <div class="glass-card rounded-2xl p-8 sm:p-10 group relative overflow-hidden">
                         <div class="space-y-4 max-w-3xl">
-                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-xs font-mono text-amber-600 font-semibold">
-                                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                                <span>${p.badge || 'Mini Project Deliverable'}</span>
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${projectBadgeClass} text-xs font-mono font-semibold">
+                                <span class="w-2 h-2 rounded-full ${projectPulseClass} animate-pulse"></span>
+                                <span>${projectBadgeText}</span>
                             </div>
                             <h3 class="text-3xl sm:text-4xl font-bold text-kepler-black group-hover:text-kepler-orange transition-colors">
                                 ${p.title}
@@ -1382,16 +1416,17 @@
                 } catch(err) {}
             }
 
-            // Check localStorage and KeplerDB for client-side edits
+            // Check KeplerDB first (unlimited local storage), then localStorage
             let localData = null;
-            try {
-                const saved = localStorage.getItem("kepler_academic_data");
-                if (saved) localData = JSON.parse(saved);
-            } catch(e) {}
-
-            if (!localData && window.KeplerDB) {
+            if (window.KeplerDB) {
                 try {
                     localData = await KeplerDB.getAcademicData();
+                } catch(e) {}
+            }
+            if (!localData) {
+                try {
+                    const saved = localStorage.getItem("kepler_academic_data");
+                    if (saved) localData = JSON.parse(saved);
                 } catch(e) {}
             }
 
@@ -1427,13 +1462,18 @@
                         // ASSIGNMENTS: Handle deletions cleanly
                         if (Array.isArray(data[cid].assignments)) {
                             if (data[cid].assignments.length > 0) {
-                                COURSES_DATA[cid].assignments = data[cid].assignments.map(a => ({
-                                    title: a.title,
-                                    desc: a.desc,
-                                    status: a.status || 'Graded',
-                                    score: a.score || '',
-                                    url: a.questionUrl || 'https://jmp.sh/TjycFeJg'
-                                }));
+                                COURSES_DATA[cid].assignments = data[cid].assignments.map(a => {
+                                    const primaryUrl = a.solutionUrl || a.questionUrl || 'https://jmp.sh/TjycFeJg';
+                                    return {
+                                        title: a.title,
+                                        desc: a.desc,
+                                        status: a.status || 'Graded',
+                                        score: a.score || '',
+                                        questionUrl: a.questionUrl || null,
+                                        solutionUrl: a.solutionUrl || null,
+                                        url: primaryUrl
+                                    };
+                                });
                             } else {
                                 COURSES_DATA[cid].assignments = [];
                             }
@@ -1459,6 +1499,9 @@
                                 COURSES_DATA[cid].project.url = p.fileUrl || p.live || COURSES_DATA[cid].project.url;
                                 COURSES_DATA[cid].project.codeUrl = p.codeUrl || null;
                                 COURSES_DATA[cid].project.github = p.github || COURSES_DATA[cid].project.github;
+                                COURSES_DATA[cid].project.status = p.status || (p.badge && p.badge.includes('Graded') ? 'Graded' : 'Submission');
+                                COURSES_DATA[cid].project.score = p.score || '';
+                                COURSES_DATA[cid].project.badge = p.badge || (COURSES_DATA[cid].project.status === 'Graded' ? (p.score ? `Graded • ${p.score}` : 'Graded') : 'Mini Project Submission');
                             } else {
                                 // User deleted project for this course
                                 COURSES_DATA[cid].project = null;
