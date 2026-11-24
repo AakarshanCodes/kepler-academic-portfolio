@@ -516,6 +516,7 @@
                         <label class="block text-kepler-muted uppercase mb-1">Category</label>
                         <select id="res-category"
                             class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                            <option value="Certificate">Certificate</option>
                             <option value="Textbook">Textbook</option>
                             <option value="Research Paper">Research Paper</option>
                             <option value="Cheat Sheet">Cheat Sheet</option>
@@ -528,15 +529,17 @@
                         <select id="res-type"
                             class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
                             <option value="PDF">PDF</option>
+                            <option value="DOCX">DOCX</option>
+                            <option value="XLSX">Excel (.xlsx)</option>
+                            <option value="IMAGE">Image (PNG/JPG)</option>
                             <option value="ZIP">ZIP</option>
                             <option value="JUPYTER">Jupyter (.ipynb)</option>
-                            <option value="DOCX">DOCX</option>
                         </select>
                     </div>
                 </div>
                 <div>
                     <label class="block text-kepler-muted uppercase mb-1">File Size Estimate</label>
-                    <input type="text" id="res-size" placeholder="e.g. 14.5 MB"
+                    <input type="text" id="res-size" placeholder="e.g. 1.2 MB"
                         class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
                 </div>
                 <div>
@@ -544,10 +547,14 @@
                     <textarea id="res-desc" rows="2"
                         class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white font-sans text-sm"></textarea>
                 </div>
-                <div>
-                    <label class="block text-kepler-orange uppercase mb-1">File URL / Download Link</label>
-                    <input type="text" id="res-url" placeholder="https://..."
-                        class="w-full bg-kepler-black border border-kepler-darkborder p-2.5 text-white">
+                <div class="border-t border-kepler-darkborder pt-4">
+                    <label class="block text-kepler-orange uppercase mb-1">Upload Resource / Certificate File (PDF / DOCX / Image / ZIP)</label>
+                    <input type="file" id="res-file"
+                        onchange="uploadResourceFile(this)"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2 text-kepler-muted">
+                    <div id="res-file-status" class="text-[11px] text-kepler-muted mt-1"></div>
+                    <input type="text" id="res-url" placeholder="Or enter file URL / uploads/filename.pdf"
+                        class="w-full bg-kepler-black border border-kepler-darkborder p-2 text-white mt-1.5">
                 </div>
                 <div class="pt-4 flex justify-end space-x-3">
                     <button type="button" onclick="closeModal('modal-resource')"
@@ -1206,7 +1213,7 @@
             const grid = document.getElementById("grid-resources");
             const resources = (academicData[currentCourse] && academicData[currentCourse].resources) || [];
             if (resources.length === 0) {
-                grid.innerHTML = `<div class="col-span-full p-8 text-center text-kepler-muted font-mono text-xs">No resources uploaded. Click "Add Resource File".</div>`;
+                grid.innerHTML = `<div class="col-span-full p-8 text-center text-kepler-muted font-mono text-xs">No resources uploaded. Click "Add Academic Resource".</div>`;
                 return;
             }
             grid.innerHTML = resources.map((r, idx) => `
@@ -1214,43 +1221,77 @@
                     <div>
                         <div class="flex items-center justify-between font-mono text-[10px] text-kepler-orange pb-2 border-b border-kepler-darkborder">
                             <span>${r.category}</span>
-                            <span class="text-white">${r.type} • ${r.size || '2.0 MB'}</span>
+                            <span class="text-white">${r.type} • ${r.size || '1.0 MB'}</span>
                         </div>
                         <h4 class="font-serif text-lg text-white mt-2">${r.title}</h4>
                         <p class="text-xs text-kepler-muted line-clamp-2 mt-1">${r.desc || ''}</p>
                     </div>
                     <div class="flex items-center justify-between pt-2 border-t border-kepler-darkborder font-mono text-xs">
-                        <span class="text-[10px] text-emerald-400">Verified File</span>
+                        ${r.url && r.url !== '#' && r.url !== '#file' ? `<a href="${r.url}" target="_blank" class="text-kepler-orange hover:underline text-[10px] font-mono flex items-center gap-1"><i data-lucide="file-text" class="w-3 h-3"></i> Document ↗</a>` : '<span class="text-[10px] text-emerald-400">Verified File</span>'}
                         <div class="space-x-2">
-                            <button onclick="editResource(${idx})" class="p-1 hover:text-kepler-orange"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                            <button onclick="deleteResource(${idx})" class="p-1 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <button onclick="editResource(${idx})" class="p-1 hover:text-kepler-orange" title="Edit"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="deleteResource(${idx})" class="p-1 hover:text-red-400" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </div>
                     </div>
                 </div>
             `).join('');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function uploadResourceFile(fileInput) {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // Auto-calculate size
+            const sizeInMb = (file.size / (1024 * 1024)).toFixed(1);
+            const sizeStr = sizeInMb >= 0.1 ? `${sizeInMb} MB` : `${(file.size / 1024).toFixed(0)} KB`;
+            const sizeInput = document.getElementById("res-size");
+            if (sizeInput) sizeInput.value = sizeStr;
+
+            // Auto-detect format type
+            const ext = file.name.split('.').pop().toLowerCase();
+            const typeSelect = document.getElementById("res-type");
+            if (typeSelect) {
+                if (ext === 'pdf') typeSelect.value = 'PDF';
+                else if (['docx', 'doc'].includes(ext)) typeSelect.value = 'DOCX';
+                else if (['xlsx', 'xls', 'csv'].includes(ext)) typeSelect.value = 'XLSX';
+                else if (ext === 'zip') typeSelect.value = 'ZIP';
+                else if (ext === 'ipynb') typeSelect.value = 'JUPYTER';
+                else if (['png', 'jpg', 'jpeg', 'svg', 'webp'].includes(ext)) typeSelect.value = 'IMAGE';
+            }
+
+            uploadFileToServer(fileInput, 'res-url', 'res-file-status');
         }
 
         function openResourceModal(editIndex = -1) {
             document.getElementById("modal-resource").classList.remove("hidden");
+            const resFileInput = document.getElementById("res-file");
+            if (resFileInput) resFileInput.value = "";
+
+            if (!academicData[currentCourse]) academicData[currentCourse] = { assignments: [], projects: [], learnings: [], resources: [] };
+            if (!academicData[currentCourse].resources) academicData[currentCourse].resources = [];
+
             if (editIndex >= 0) {
                 const r = academicData[currentCourse].resources[editIndex];
                 document.getElementById("modal-res-title").innerText = "Edit Resource";
                 document.getElementById("res-edit-idx").value = editIndex;
-                document.getElementById("res-title").value = r.title;
-                document.getElementById("res-category").value = r.category;
-                document.getElementById("res-type").value = r.type;
+                document.getElementById("res-title").value = r.title || "";
+                document.getElementById("res-category").value = r.category || "Certificate";
+                document.getElementById("res-type").value = r.type || "PDF";
                 document.getElementById("res-size").value = r.size || "";
                 document.getElementById("res-desc").value = r.desc || "";
                 document.getElementById("res-url").value = r.url || "";
+                document.getElementById("res-file-status").innerHTML = r.url ? `<span class="text-emerald-400 font-mono text-[11px]">Current Link/File: ${r.url.startsWith('data:') ? 'Embedded Document' : r.url}</span>` : "";
             } else {
                 document.getElementById("modal-res-title").innerText = "Add Academic Resource";
                 document.getElementById("res-edit-idx").value = "-1";
                 document.getElementById("res-title").value = "";
-                document.getElementById("res-category").value = "Textbook";
+                document.getElementById("res-category").value = "Certificate";
                 document.getElementById("res-type").value = "PDF";
-                document.getElementById("res-size").value = "5.0 MB";
+                document.getElementById("res-size").value = "";
                 document.getElementById("res-desc").value = "";
                 document.getElementById("res-url").value = "";
+                document.getElementById("res-file-status").innerHTML = "";
             }
             if (window.lucide) lucide.createIcons();
         }
@@ -1265,17 +1306,20 @@
             }
         }
 
-        function saveResource(e) {
+        async function saveResource(e) {
             e.preventDefault();
             const editId = parseInt(document.getElementById("res-edit-idx").value);
             const rObj = {
-                title: document.getElementById("res-title").value,
+                title: document.getElementById("res-title").value.trim(),
                 category: document.getElementById("res-category").value,
                 type: document.getElementById("res-type").value,
-                size: document.getElementById("res-size").value,
-                desc: document.getElementById("res-desc").value,
-                url: document.getElementById("res-url").value || "#file"
+                size: document.getElementById("res-size").value.trim() || "1.0 MB",
+                desc: document.getElementById("res-desc").value.trim(),
+                url: document.getElementById("res-url").value.trim() || "#file"
             };
+
+            if (!academicData[currentCourse]) academicData[currentCourse] = { assignments: [], projects: [], learnings: [], resources: [] };
+            if (!academicData[currentCourse].resources) academicData[currentCourse].resources = [];
 
             if (editId >= 0) {
                 academicData[currentCourse].resources[editId] = rObj;
@@ -1283,10 +1327,14 @@
                 academicData[currentCourse].resources.push(rObj);
             }
 
-            persistData();
+            const synced = await persistData();
             closeModal('modal-resource');
             renderResourcesGrid();
-            alert("Resource file saved.");
+            if (synced) {
+                alert("✓ Resource successfully saved and synced to database!");
+            } else {
+                alert("✓ Resource saved locally in browser storage.");
+            }
         }
 
         // ---------------------------------------------------------------------

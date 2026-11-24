@@ -1424,6 +1424,24 @@
                             COURSES_DATA[cid].project.codeUrl = p.codeUrl || null;
                             COURSES_DATA[cid].project.github = p.github || COURSES_DATA[cid].project.github;
                         }
+                        if (data[cid].resources && data[cid].resources.length > 0) {
+                            const certRes = data[cid].resources.find(r => r.category === 'Certificate' || (r.title && r.title.toLowerCase().includes('certif')));
+                            if (certRes) {
+                                if (!COURSES_DATA[cid].certificates) {
+                                    COURSES_DATA[cid].certificates = {
+                                        sectionTitle: "Certificates",
+                                        title: certRes.title,
+                                        due: "Official Verified Academic Credential",
+                                        desc: certRes.desc || "Verified academic certification credential.",
+                                        url: certRes.url
+                                    };
+                                } else {
+                                    COURSES_DATA[cid].certificates.title = certRes.title;
+                                    COURSES_DATA[cid].certificates.url = certRes.url;
+                                    if (certRes.desc) COURSES_DATA[cid].certificates.desc = certRes.desc;
+                                }
+                            }
+                        }
                     }
                 }
             }
