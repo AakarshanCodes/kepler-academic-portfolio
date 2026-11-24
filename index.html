@@ -16,6 +16,8 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Mammoth for Word Document (.docx) In-Browser Rendering -->
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <!-- JSZip for PowerPoint (.pptx) Presentation Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <!-- KeplerDB: Universal IndexedDB Persistence -->
     <script src="db.js"></script>
     <script>
@@ -1240,6 +1242,7 @@
                 if (dataMime.includes('pdf')) inferredExt = 'pdf';
                 else if (dataMime.includes('word') || dataMime.includes('officedocument.wordprocessingml')) inferredExt = 'docx';
                 else if (dataMime.includes('sheet') || dataMime.includes('excel') || dataMime.includes('csv')) inferredExt = 'xlsx';
+                else if (dataMime.includes('presentation') || dataMime.includes('powerpoint')) inferredExt = 'pptx';
                 else if (dataMime.startsWith('image/')) inferredExt = dataMime.split('/')[1];
             } else {
                 inferredExt = cleanUrl.split('.').pop().toLowerCase();
@@ -1251,7 +1254,7 @@
             if (openLink) openLink.href = effectiveViewUrl;
             if (downloadLink) {
                 downloadLink.href = effectiveViewUrl;
-                const fname = isDataUri ? (title.replace(/[^a-zA-Z0-9_-]/g, '_') + (dataMime.includes('pdf') ? '.pdf' : dataMime.includes('sheet') ? '.xlsx' : '')) : fileName;
+                const fname = isDataUri ? (title.replace(/[^a-zA-Z0-9_-]/g, '_') + (dataMime.includes('pdf') ? '.pdf' : dataMime.includes('sheet') ? '.xlsx' : dataMime.includes('presentation') ? '.pptx' : '')) : fileName;
                 downloadLink.setAttribute('download', fname);
             }
 
@@ -1271,6 +1274,7 @@
                 const mime = (dataMime || (idbRecord && idbRecord.type) || '').toLowerCase();
                 const isExcel = ['xlsx', 'xls', 'csv'].includes(ext) || mime.includes('spreadsheet') || mime.includes('excel') || mime.includes('csv');
                 const isWord = ['docx', 'doc'].includes(ext) || mime.includes('wordprocessing') || mime.includes('msword') || mime.includes('officedocument.wordprocessingml');
+                const isPresentation = ['pptx', 'ppt', 'key', 'odp'].includes(ext) || mime.includes('presentation') || mime.includes('powerpoint');
                 const isPdf = ext === 'pdf' || mime.includes('pdf') || cleanUrl.endsWith('.pdf');
                 const isImage = ['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'].includes(ext) || mime.startsWith('image/');
                 const isCode = ['txt', 'py', 'ipynb', 'json', 'sql', 'md', 'js', 'html', 'css'].includes(ext) || mime.startsWith('text/') || mime.includes('json');
@@ -1383,7 +1387,217 @@
                     }
                 }
 
-                // 3. PDF DOCUMENTS (.pdf or data:application/pdf)
+                // 3. POWERPOINT PRESENTATIONS (.pptx, .ppt)
+                if (isPresentation) {
+                    if (modalIcon) modalIcon.setAttribute("data-lucide", "presentation");
+                    if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Presentation Deck`;
+
+                    let arrayBuffer;
+                    if (isIdb && idbRecord && idbRecord.blob) {
+                        arrayBuffer = await idbRecord.blob.arrayBuffer();
+                    } else if (isDataUri) {
+                        arrayBuffer = dataUriToArrayBuffer(docUrl);
+                    } else {
+                        const response = await fetch(docUrl);
+                        if (!response.ok) throw new Error(`Could not load presentation (HTTP ${response.status})`);
+                        arrayBuffer = await response.arrayBuffer();
+                    }
+
+                    let slidesData = [];
+                    if (typeof JSZip !== 'undefined') {
+                        try {
+                            const zip = await JSZip.loadAsync(arrayBuffer);
+                            const slideFiles = [];
+                            zip.forEach((relPath) => {
+                                if (/^ppt\/slides\/slide\d+\.xml$/i.test(relPath)) {
+                                    slideFiles.push(relPath);
+                                }
+                            });
+                            slideFiles.sort((a, b) => {
+                                const numA = parseInt(a.match(/\d+/)[0], 10);
+                                const numB = parseInt(b.match(/\d+/)[0], 10);
+                                return numA - numB;
+                            });
+
+                            const parser = new DOMParser();
+                            for (const sPath of slideFiles) {
+                                const xmlStr = await zip.file(sPath).async('string');
+                                const xmlDoc = parser.parseFromString(xmlStr, 'text/xml');
+                                const paragraphs = [];
+                                const pNodes = xmlDoc.getElementsByTagName('a:p');
+                                for (let i = 0; i < pNodes.length; i++) {
+                                    const p = pNodes[i];
+                                    let pText = '';
+                                    const tNodes = p.getElementsByTagName('a:t');
+                                    for (let j = 0; j < tNodes.length; j++) {
+                                        pText += tNodes[j].textContent;
+                                    }
+                                    pText = pText.trim();
+                                    if (pText) paragraphs.push(pText);
+                                }
+                                if (paragraphs.length > 0) {
+                                    slidesData.push({
+                                        slideNum: slidesData.length + 1,
+                                        title: paragraphs[0] || `Slide ${slidesData.length + 1}`,
+                                        bullets: paragraphs.slice(1)
+                                    });
+                                }
+                            }
+                        } catch (zipErr) {
+                            console.warn("Could not parse PPTX with JSZip:", zipErr);
+                        }
+                    }
+
+                    if (slidesData.length > 0) {
+                        window._pptxSlides = slidesData;
+                        window._currentSlideIdx = 0;
+
+                        window.renderPptxSlide = function(idx) {
+                            if (idx < 0) idx = 0;
+                            if (idx >= window._pptxSlides.length) idx = window._pptxSlides.length - 1;
+                            window._currentSlideIdx = idx;
+
+                            const s = window._pptxSlides[idx];
+                            const total = window._pptxSlides.length;
+
+                            const counterEl = document.getElementById("pptx-slide-counter");
+                            const footerNumEl = document.getElementById("pptx-slide-footer-num");
+                            const titleEl = document.getElementById("pptx-slide-title");
+                            const bodyEl = document.getElementById("pptx-slide-body");
+                            const prevBtn = document.getElementById("pptx-prev-btn");
+                            const nextBtn = document.getElementById("pptx-next-btn");
+
+                            if (counterEl) counterEl.innerText = `Slide ${idx + 1} of ${total}`;
+                            if (footerNumEl) footerNumEl.innerText = `${idx + 1} / ${total}`;
+                            if (titleEl) titleEl.innerText = s.title;
+                            if (bodyEl) {
+                                if (s.bullets.length > 0) {
+                                    bodyEl.innerHTML = s.bullets.map(b => `
+                                        <div class="flex items-start gap-3">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-orange-400 mt-2 shrink-0"></span>
+                                            <span class="text-slate-200">${b.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
+                                        </div>
+                                    `).join('');
+                                } else {
+                                    bodyEl.innerHTML = `<p class="text-slate-400 italic text-sm">Title Slide / Visual Content</p>`;
+                                }
+                            }
+
+                            if (prevBtn) prevBtn.disabled = (idx === 0);
+                            if (nextBtn) nextBtn.disabled = (idx === total - 1);
+
+                            // Update dot styles
+                            for (let i = 0; i < total; i++) {
+                                const dot = document.getElementById(`pptx-dot-${i}`);
+                                if (dot) {
+                                    if (i === idx) {
+                                        dot.className = "w-7 h-7 rounded-lg font-mono text-xs font-bold flex items-center justify-center transition-all bg-kepler-orange text-white shadow-sm";
+                                    } else {
+                                        dot.className = "w-7 h-7 rounded-lg font-mono text-xs font-semibold flex items-center justify-center transition-all bg-kepler-offwhite text-kepler-muted hover:bg-kepler-paper";
+                                    }
+                                }
+                            }
+                        };
+
+                        window.pptxNextSlide = function() {
+                            window.renderPptxSlide(window._currentSlideIdx + 1);
+                        };
+                        window.pptxPrevSlide = function() {
+                            window.renderPptxSlide(window._currentSlideIdx - 1);
+                        };
+                        window.pptxGoToSlide = function(idx) {
+                            window.renderPptxSlide(idx);
+                        };
+
+                        modalBody.innerHTML = `
+                            <div class="flex flex-col space-y-4">
+                                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-kepler-subtleborder pb-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2.5 py-1 rounded-lg bg-orange-100 text-orange-800 font-mono text-xs font-bold flex items-center gap-1.5">
+                                            <i data-lucide="presentation" class="w-3.5 h-3.5"></i>
+                                            <span id="pptx-slide-counter">Slide 1 of ${slidesData.length}</span>
+                                        </span>
+                                        <span class="text-xs font-mono text-kepler-muted">${(arrayBuffer.byteLength / 1024 / 1024).toFixed(2)} MB • PowerPoint Presentation</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <a href="${effectiveViewUrl}" download="${fileName}" class="px-4 py-2 rounded-xl bg-kepler-orange hover:bg-kepler-orangeDark text-white font-mono text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all">
+                                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                            <span>Download .pptx</span>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div id="pptx-slide-canvas" class="w-full min-h-[380px] sm:min-h-[440px] rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 p-8 sm:p-12 text-white flex flex-col justify-between border border-slate-700 shadow-2xl relative overflow-hidden">
+                                    <div class="space-y-6">
+                                        <div class="inline-flex items-center gap-2 text-xs font-mono text-orange-400 font-semibold tracking-wider uppercase">
+                                            <span>PRESENTATION SLIDE</span>
+                                        </div>
+                                        <h2 id="pptx-slide-title" class="text-2xl sm:text-3xl font-bold font-serif text-white leading-tight"></h2>
+                                        <div id="pptx-slide-body" class="space-y-3 pt-2 font-body text-slate-300 text-sm sm:text-base leading-relaxed max-h-[220px] overflow-y-auto pr-2"></div>
+                                    </div>
+                                    <div class="pt-6 border-t border-slate-700/60 flex items-center justify-between text-xs font-mono text-slate-400">
+                                        <span class="truncate max-w-[70%]">${title}</span>
+                                        <span id="pptx-slide-footer-num">1 / ${slidesData.length}</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between pt-2">
+                                    <button id="pptx-prev-btn" onclick="pptxPrevSlide()" class="px-4 py-2 rounded-xl bg-kepler-offwhite hover:bg-kepler-paper border border-kepler-subtleborder text-kepler-charcoal font-mono text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                        <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
+                                    </button>
+                                    <div class="flex items-center gap-1.5 overflow-x-auto max-w-[50%] px-2">
+                                        ${slidesData.map((s, idx) => `
+                                            <button onclick="pptxGoToSlide(${idx})" id="pptx-dot-${idx}" class="w-7 h-7 rounded-lg font-mono text-xs font-semibold flex items-center justify-center transition-all ${idx === 0 ? 'bg-kepler-orange text-white' : 'bg-kepler-offwhite text-kepler-muted hover:bg-kepler-paper'}">
+                                                ${idx + 1}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                    <button id="pptx-next-btn" onclick="pptxNextSlide()" class="px-4 py-2 rounded-xl bg-kepler-offwhite hover:bg-kepler-paper border border-kepler-subtleborder text-kepler-charcoal font-mono text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                        Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+
+                        window.renderPptxSlide(0);
+                        if (window.lucide) lucide.createIcons();
+                        return;
+                    }
+
+                    // Fallback for PPTX when XML slides can't be parsed (graphics-only deck or binary PPT)
+                    modalBody.innerHTML = `
+                        <div class="py-10 px-6 text-center space-y-6 max-w-lg mx-auto">
+                            <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white shadow-xl shadow-orange-500/30">
+                                <i data-lucide="presentation" class="w-10 h-10"></i>
+                            </div>
+                            <div class="space-y-2">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-mono font-semibold text-emerald-700">
+                                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Stored in Portfolio Library
+                                </span>
+                                <h3 class="font-bold text-2xl text-kepler-black">${fileName}</h3>
+                                <p class="text-xs font-mono text-kepler-muted">${(arrayBuffer.byteLength / 1024 / 1024).toFixed(2)} MB • Microsoft PowerPoint Presentation</p>
+                            </div>
+                            <p class="text-xs text-kepler-muted font-body leading-relaxed max-w-md mx-auto">
+                                This PowerPoint slide deck is securely saved in your browser's persistent library. You can download and launch it directly in PowerPoint, Google Slides, or Keynote.
+                            </p>
+                            <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                                <a href="${effectiveViewUrl}" download="${fileName}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-kepler-orange to-kepler-orangeDark text-white font-mono text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 hover:scale-[1.02]">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                    <span>Download Presentation (.pptx)</span>
+                                </a>
+                            </div>
+                            <div class="pt-4 border-t border-kepler-subtleborder">
+                                <p class="text-[11px] text-kepler-muted font-mono">
+                                    💡 Pro-Tip: You can also export this presentation as a <b>PDF</b> in PowerPoint, and upload the PDF to view all slides visually directly inside this in-browser viewer!
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    if (window.lucide) lucide.createIcons();
+                    return;
+                }
+
+                // 4. PDF DOCUMENTS (.pdf or data:application/pdf)
                 if (isPdf) {
                     if (modalIcon) modalIcon.setAttribute("data-lucide", "file-text");
                     if (modalSubtitle) modalSubtitle.innerText = `${fileName} • PDF Viewer`;
@@ -1398,7 +1612,7 @@
                     return;
                 }
 
-                // 4. IMAGES (.png, .jpg, .jpeg, .svg, .webp)
+                // 5. IMAGES (.png, .jpg, .jpeg, .svg, .webp)
                 if (isImage) {
                     if (modalIcon) modalIcon.setAttribute("data-lucide", "image");
                     if (modalSubtitle) modalSubtitle.innerText = `${fileName} • High-Res Image`;
@@ -1413,7 +1627,7 @@
                     return;
                 }
 
-                // 5. CODE / TEXT / JUPYTER (.py, .ipynb, .json, .txt, .sql, .md)
+                // 6. CODE / TEXT / JUPYTER (.py, .ipynb, .json, .txt, .sql, .md)
                 if (isCode) {
                     if (modalIcon) modalIcon.setAttribute("data-lucide", "code");
                     if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Source View`;
@@ -1440,27 +1654,29 @@
                     }
                 }
 
-                // 6. EXTERNAL CLOUD RESOURCE FALLBACK (Jumpshare, External links)
-                if (modalIcon) modalIcon.setAttribute("data-lucide", "external-link");
-                if (modalSubtitle) modalSubtitle.innerText = `External Academic Resource`;
+                // 7. EXTERNAL CLOUD RESOURCE FALLBACK OR GENERAL STORED FILE
+                const isStoredLocal = isIdb || isDataUri;
+                if (modalIcon) modalIcon.setAttribute("data-lucide", isStoredLocal ? "file-check" : "external-link");
+                if (modalSubtitle) modalSubtitle.innerText = isStoredLocal ? `${fileName} • Stored File Deliverable` : `External Academic Resource`;
                 modalBody.innerHTML = `
                     <div class="py-12 px-6 text-center space-y-4 max-w-md mx-auto">
-                        <div class="w-16 h-16 mx-auto rounded-full bg-kepler-orange/10 flex items-center justify-center text-kepler-orange shadow-sm">
-                            <i data-lucide="external-link" class="w-8 h-8"></i>
+                        <div class="w-16 h-16 mx-auto rounded-full ${isStoredLocal ? 'bg-emerald-50 text-emerald-600' : 'bg-kepler-orange/10 text-kepler-orange'} flex items-center justify-center shadow-sm">
+                            <i data-lucide="${isStoredLocal ? 'file-check' : 'external-link'}" class="w-8 h-8"></i>
                         </div>
                         <h4 class="font-bold text-xl text-kepler-black">${title}</h4>
                         <p class="text-xs text-kepler-muted font-body leading-relaxed">
-                            This academic deliverable is linked to an external cloud platform or service. Click below to open directly in a new window.
+                            ${isStoredLocal ? 'This academic deliverable is securely stored in your academic portfolio library.' : 'This academic deliverable is linked to an external cloud platform or service. Click below to open directly in a new window.'}
                         </p>
                         <div class="pt-4 flex items-center justify-center gap-3">
-                            <a href="${docUrl}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-xl bg-kepler-orange hover:bg-kepler-orangeDark text-white font-mono text-xs font-bold transition-all flex items-center gap-2 shadow-md shadow-orange-500/20">
-                                <span>Open Deliverable</span>
-                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                            <a href="${effectiveViewUrl}" ${isStoredLocal ? `download="${fileName}"` : 'target="_blank" rel="noopener noreferrer"'} class="px-6 py-3 rounded-xl bg-kepler-orange hover:bg-kepler-orangeDark text-white font-mono text-xs font-bold transition-all flex items-center gap-2 shadow-md shadow-orange-500/20">
+                                <span>${isStoredLocal ? 'Download Deliverable' : 'Open Deliverable'}</span>
+                                <i data-lucide="${isStoredLocal ? 'download' : 'external-link'}" class="w-4 h-4"></i>
                             </a>
                         </div>
+                        ${!isStoredLocal ? `
                         <p class="text-[11px] text-kepler-muted pt-2 font-mono">
-                            Tip: You can upload your PDF or DOCX file directly in the Admin Portal to render it inside this in-browser viewer.
-                        </p>
+                            Tip: You can upload your PDF, DOCX, XLSX, or PPTX file directly in the Admin Portal to render it inside this in-browser viewer.
+                        </p>` : ''}
                     </div>
                 `;
                 if (window.lucide) lucide.createIcons();
