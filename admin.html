@@ -18,6 +18,97 @@
     <!-- KeplerDB: Universal IndexedDB Persistence -->
     <script src="db.js"></script>
     <script>
+        if (typeof window.KeplerDB === 'undefined' && typeof KeplerDB !== 'undefined') {
+            window.KeplerDB = KeplerDB;
+        }
+        if (!window.KeplerDB) {
+            window.KeplerDB = (function() {
+                const DB_NAME = 'KeplerAcademicPortfolioDB';
+                const DB_VERSION = 1;
+                let dbInstance = null;
+                function openDB() {
+                    if (dbInstance) return Promise.resolve(dbInstance);
+                    return new Promise((resolve, reject) => {
+                        if (typeof indexedDB === 'undefined') return reject(new Error("No IndexedDB"));
+                        const req = indexedDB.open(DB_NAME, DB_VERSION);
+                        req.onupgradeneeded = function(e) {
+                            const db = e.target.result;
+                            if (!db.objectStoreNames.contains('files')) db.createObjectStore('files', { keyPath: 'id' });
+                            if (!db.objectStoreNames.contains('store')) db.createObjectStore('store', { keyPath: 'key' });
+                        };
+                        req.onsuccess = function(e) { dbInstance = e.target.result; resolve(dbInstance); };
+                        req.onerror = function(e) { reject(e); };
+                    });
+                }
+                async function saveFile(file) {
+                    const db = await openDB();
+                    const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                    const id = 'idb://file_' + Date.now() + '_' + cleanName;
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction('files', 'readwrite');
+                        const store = tx.objectStore('files');
+                        const record = { id, name: file.name, type: file.type || 'application/octet-stream', size: file.size, blob: file, createdAt: new Date().toISOString() };
+                        const req = store.put(record);
+                        req.onsuccess = () => resolve({ id, url: id, name: file.name, size: file.size, type: record.type });
+                        req.onerror = (err) => reject(err);
+                    });
+                }
+                async function getFile(id) {
+                    try {
+                        const db = await openDB();
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('files', 'readonly');
+                            const store = tx.objectStore('files');
+                            const req = store.get(id);
+                            req.onsuccess = () => resolve(req.result || null);
+                            req.onerror = () => resolve(null);
+                        });
+                    } catch(e) { return null; }
+                }
+                async function deleteFile(id) {
+                    try {
+                        const db = await openDB();
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('files', 'readwrite');
+                            const store = tx.objectStore('files');
+                            const req = store.delete(id);
+                            req.onsuccess = () => resolve(true);
+                            req.onerror = () => resolve(false);
+                        });
+                    } catch(e) { return false; }
+                }
+                async function setAcademicData(data) {
+                    try {
+                        const db = await openDB();
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('store', 'readwrite');
+                            const store = tx.objectStore('store');
+                            const req = store.put({ key: 'academicData', payload: data, updatedAt: Date.now() });
+                            req.onsuccess = () => resolve(true);
+                            req.onerror = () => resolve(false);
+                        });
+                    } catch(e) { return false; }
+                }
+                async function getAcademicData() {
+                    try {
+                        const db = await openDB();
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('store', 'readonly');
+                            const store = tx.objectStore('store');
+                            const req = store.get('academicData');
+                            req.onsuccess = () => {
+                                if (req.result && req.result.payload) resolve(req.result.payload);
+                                else resolve(null);
+                            };
+                            req.onerror = () => resolve(null);
+                        });
+                    } catch(e) { return null; }
+                }
+                return { saveFile, getFile, deleteFile, setAcademicData, getAcademicData };
+            })();
+        }
+    </script>
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
@@ -772,9 +863,10 @@
                 }
 
                 // 2. Save directly to client IndexedDB for static hosts (GitHub Pages) or fallback
-                if (!savedUrl && window.KeplerDB) {
+                const db = window.KeplerDB || (typeof KeplerDB !== 'undefined' ? KeplerDB : null);
+                if (!savedUrl && db) {
                     try {
-                        const idbRes = await KeplerDB.saveFile(file);
+                        const idbRes = await db.saveFile(file);
                         if (idbRes && idbRes.url) {
                             savedUrl = idbRes.url;
                             if (statusDiv) statusDiv.innerHTML = `<span class="text-emerald-400 font-mono text-xs font-bold">✓ Stored in browser library (${file.name})</span>`;
@@ -827,9 +919,10 @@
 
             // Check KeplerDB first (unlimited), then localStorage
             let localData = null;
-            if (window.KeplerDB) {
+            const db = window.KeplerDB || (typeof KeplerDB !== 'undefined' ? KeplerDB : null);
+            if (db) {
                 try {
-                    localData = await KeplerDB.getAcademicData();
+                    localData = await db.getAcademicData();
                 } catch(e) {}
             }
             if (!localData) {
@@ -861,25 +954,32 @@
             try {
                 localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
             } catch(e) {}
-            if (window.KeplerDB) {
-                KeplerDB.setAcademicData(academicData).catch(e => {});
+            if (db) {
+                db.setAcademicData(academicData).catch(e => {});
             }
             if (typeof renderActiveTab === 'function') renderActiveTab();
         }
 
         async function persistData() {
             let syncSuccess = false;
-            try {
-                localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
-            } catch (storageErr) {
-                console.warn("LocalStorage warning:", storageErr);
+            const db = window.KeplerDB || (typeof KeplerDB !== 'undefined' ? KeplerDB : null);
+
+            // 1. Always save to KeplerDB first (unlimited capacity)
+            if (db) {
+                try {
+                    await db.setAcademicData(academicData);
+                    syncSuccess = true;
+                } catch(e) {
+                    console.error("KeplerDB save error:", e);
+                }
             }
 
-            if (window.KeplerDB) {
-                try {
-                    await KeplerDB.setAcademicData(academicData);
-                    syncSuccess = true;
-                } catch(e) {}
+            // 2. Try saving to localStorage
+            try {
+                localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
+                syncSuccess = true;
+            } catch (storageErr) {
+                console.warn("LocalStorage warning:", storageErr);
             }
 
             const isLocalHost = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -897,7 +997,7 @@
                     console.log("Local save error", e);
                 }
             } else {
-                syncSuccess = true; // On GitHub Pages, IndexedDB is our primary persistent database
+                syncSuccess = true; // On GitHub Pages, IndexedDB is our persistent database
             }
             window.dispatchEvent(new Event('storage'));
             return syncSuccess;

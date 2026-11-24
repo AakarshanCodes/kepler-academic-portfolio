@@ -19,6 +19,97 @@
     <!-- KeplerDB: Universal IndexedDB Persistence -->
     <script src="db.js"></script>
     <script>
+        if (typeof window.KeplerDB === 'undefined' && typeof KeplerDB !== 'undefined') {
+            window.KeplerDB = KeplerDB;
+        }
+        if (!window.KeplerDB) {
+            window.KeplerDB = (function() {
+                const DB_NAME = 'KeplerAcademicPortfolioDB';
+                const DB_VERSION = 1;
+                let dbInstance = null;
+                function openDB() {
+                    if (dbInstance) return Promise.resolve(dbInstance);
+                    return new Promise((resolve, reject) => {
+                        if (typeof indexedDB === 'undefined') return reject(new Error("No IndexedDB"));
+                        const req = indexedDB.open(DB_NAME, DB_VERSION);
+                        req.onupgradeneeded = function(e) {
+                            const db = e.target.result;
+                            if (!db.objectStoreNames.contains('files')) db.createObjectStore('files', { keyPath: 'id' });
+                            if (!db.objectStoreNames.contains('store')) db.createObjectStore('store', { keyPath: 'key' });
+                        };
+                        req.onsuccess = function(e) { dbInstance = e.target.result; resolve(dbInstance); };
+                        req.onerror = function(e) { reject(e); };
+                    });
+                }
+                async function saveFile(file) {
+                    const db = await openDB();
+                    const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                    const id = 'idb://file_' + Date.now() + '_' + cleanName;
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction('files', 'readwrite');
+                        const store = tx.objectStore('files');
+                        const record = { id, name: file.name, type: file.type || 'application/octet-stream', size: file.size, blob: file, createdAt: new Date().toISOString() };
+                        const req = store.put(record);
+                        req.onsuccess = () => resolve({ id, url: id, name: file.name, size: file.size, type: record.type });
+                        req.onerror = (err) => reject(err);
+                    });
+                }
+                async function getFile(id) {
+                    try {
+                        const db = await openDB();
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('files', 'readonly');
+                            const store = tx.objectStore('files');
+                            const req = store.get(id);
+                            req.onsuccess = () => resolve(req.result || null);
+                            req.onerror = () => resolve(null);
+                        });
+                    } catch(e) { return null; }
+                }
+                async function deleteFile(id) {
+                    try {
+                        const db = await openDB();
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('files', 'readwrite');
+                            const store = tx.objectStore('files');
+                            const req = store.delete(id);
+                            req.onsuccess = () => resolve(true);
+                            req.onerror = () => resolve(false);
+                        });
+                    } catch(e) { return false; }
+                }
+                async function setAcademicData(data) {
+                    try {
+                        const db = await openDB();
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('store', 'readwrite');
+                            const store = tx.objectStore('store');
+                            const req = store.put({ key: 'academicData', payload: data, updatedAt: Date.now() });
+                            req.onsuccess = () => resolve(true);
+                            req.onerror = () => resolve(false);
+                        });
+                    } catch(e) { return false; }
+                }
+                async function getAcademicData() {
+                    try {
+                        const db = await openDB();
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('store', 'readonly');
+                            const store = tx.objectStore('store');
+                            const req = store.get('academicData');
+                            req.onsuccess = () => {
+                                if (req.result && req.result.payload) resolve(req.result.payload);
+                                else resolve(null);
+                            };
+                            req.onerror = () => resolve(null);
+                        });
+                    } catch(e) { return null; }
+                }
+                return { saveFile, getFile, deleteFile, setAcademicData, getAcademicData };
+            })();
+        }
+    </script>
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
@@ -1120,9 +1211,10 @@
             let blobUrl = null;
             let idbRecord = null;
 
-            if (isIdb && window.KeplerDB) {
+            const db = window.KeplerDB || (typeof KeplerDB !== 'undefined' ? KeplerDB : null);
+            if (isIdb && db) {
                 try {
-                    idbRecord = await KeplerDB.getFile(docUrl);
+                    idbRecord = await db.getFile(docUrl);
                     if (idbRecord && idbRecord.blob) {
                         blobUrl = URL.createObjectURL(idbRecord.blob);
                         if (idbRecord.type) dataMime = idbRecord.type.toLowerCase();
@@ -1141,7 +1233,18 @@
             }
 
             const cleanUrl = isIdb ? (idbRecord ? idbRecord.name : '') : (isDataUri ? '' : docUrl.split('?')[0].split('#')[0]);
-            const ext = isIdb ? (idbRecord ? idbRecord.name.split('.').pop().toLowerCase() : '') : (isDataUri ? '' : cleanUrl.split('.').pop().toLowerCase());
+            let inferredExt = '';
+            if (isIdb && idbRecord && idbRecord.name) {
+                inferredExt = idbRecord.name.split('.').pop().toLowerCase();
+            } else if (isDataUri) {
+                if (dataMime.includes('pdf')) inferredExt = 'pdf';
+                else if (dataMime.includes('word') || dataMime.includes('officedocument.wordprocessingml')) inferredExt = 'docx';
+                else if (dataMime.includes('sheet') || dataMime.includes('excel') || dataMime.includes('csv')) inferredExt = 'xlsx';
+                else if (dataMime.startsWith('image/')) inferredExt = dataMime.split('/')[1];
+            } else {
+                inferredExt = cleanUrl.split('.').pop().toLowerCase();
+            }
+            const ext = inferredExt;
             const fileName = isIdb ? (idbRecord ? idbRecord.name : title) : (isDataUri ? (title || 'Uploaded Document') : (cleanUrl.split('/').pop() || 'document'));
 
             const effectiveViewUrl = blobUrl || docUrl;
@@ -1165,11 +1268,12 @@
             `;
 
             try {
-                const isExcel = ['xlsx', 'xls', 'csv'].includes(ext) || dataMime.includes('spreadsheet') || dataMime.includes('excel') || dataMime.includes('csv');
-                const isWord = ['docx', 'doc'].includes(ext) || dataMime.includes('wordprocessing') || dataMime.includes('msword');
-                const isPdf = ext === 'pdf' || dataMime.includes('pdf') || cleanUrl.endsWith('.pdf');
-                const isImage = ['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'].includes(ext) || dataMime.startsWith('image/');
-                const isCode = ['txt', 'py', 'ipynb', 'json', 'sql', 'md', 'js', 'html', 'css'].includes(ext) || dataMime.startsWith('text/') || dataMime.includes('json');
+                const mime = (dataMime || (idbRecord && idbRecord.type) || '').toLowerCase();
+                const isExcel = ['xlsx', 'xls', 'csv'].includes(ext) || mime.includes('spreadsheet') || mime.includes('excel') || mime.includes('csv');
+                const isWord = ['docx', 'doc'].includes(ext) || mime.includes('wordprocessing') || mime.includes('msword') || mime.includes('officedocument.wordprocessingml');
+                const isPdf = ext === 'pdf' || mime.includes('pdf') || cleanUrl.endsWith('.pdf');
+                const isImage = ['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'].includes(ext) || mime.startsWith('image/');
+                const isCode = ['txt', 'py', 'ipynb', 'json', 'sql', 'md', 'js', 'html', 'css'].includes(ext) || mime.startsWith('text/') || mime.includes('json');
 
                 // 1. EXCEL SPREADSHEETS (.xlsx, .xls, .csv)
                 if (isExcel) {
@@ -1418,10 +1522,13 @@
 
             // Check KeplerDB first (unlimited local storage), then localStorage
             let localData = null;
-            if (window.KeplerDB) {
+            const db = window.KeplerDB || (typeof KeplerDB !== 'undefined' ? KeplerDB : null);
+            if (db) {
                 try {
-                    localData = await KeplerDB.getAcademicData();
-                } catch(e) {}
+                    localData = await db.getAcademicData();
+                } catch(e) {
+                    console.warn("KeplerDB getAcademicData error:", e);
+                }
             }
             if (!localData) {
                 try {
