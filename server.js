@@ -33,6 +33,16 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
+    // Enable CORS for all incoming requests
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        return res.end();
+    }
+
     // 1. API: File Upload
     if (req.method === 'POST' && req.url === '/api/upload') {
         let body = '';
@@ -51,7 +61,8 @@ const server = http.createServer((req, res) => {
                 const buffer = Buffer.from(base64, 'base64');
 
                 fs.writeFileSync(filePath, buffer);
-                const fileUrl = '/uploads/' + safeName;
+                // Return relative path without leading slash for universal compatibility
+                const fileUrl = 'uploads/' + safeName;
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, url: fileUrl, filename: safeName }));
@@ -70,6 +81,8 @@ const server = http.createServer((req, res) => {
         req.on('end', () => {
             try {
                 const dataPath = path.join(PUBLIC_DIR, 'curriculum_data.json');
+                // Validate that body is valid JSON before saving
+                JSON.parse(body);
                 fs.writeFileSync(dataPath, body, 'utf-8');
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));

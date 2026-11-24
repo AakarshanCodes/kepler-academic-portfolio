@@ -1029,6 +1029,33 @@
             if (e.key === "Escape") closeModal();
         });
 
+        // Helper to convert base64 data URI to ArrayBuffer
+        function dataUriToArrayBuffer(dataUri) {
+            const base64 = dataUri.split(',')[1];
+            const binaryStr = atob(base64);
+            const len = binaryStr.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryStr.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // Helper to convert base64 data URI to Blob URL
+        function dataUriToBlobUrl(dataUri) {
+            const arr = dataUri.split(',');
+            const mimeMatch = arr[0].match(/:(.*?);/);
+            const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            const blob = new Blob([u8arr], { type: mime });
+            return URL.createObjectURL(blob);
+        }
+
         async function openDocumentViewer(url, title = 'Document Viewer') {
             if (!url || url === '#' || url === '') {
                 alert("No document file or URL provided.");
@@ -1036,7 +1063,7 @@
             }
 
             // Normalize path so it functions seamlessly across local server and GitHub Pages sub-paths
-            let docUrl = url;
+            let docUrl = url.trim();
             if (docUrl.startsWith('/uploads/')) {
                 docUrl = 'uploads/' + docUrl.substring(9);
             }
@@ -1050,19 +1077,34 @@
             const downloadLink = document.getElementById("modal-doc-download-link");
 
             if (modalTitle) modalTitle.innerText = title;
-            if (openLink) openLink.href = docUrl;
+
+            const isDataUri = docUrl.startsWith('data:');
+            let dataMime = '';
+            let blobUrl = null;
+            if (isDataUri) {
+                const mimeMatch = docUrl.substring(0, 100).match(/^data:([^;]+);/i);
+                if (mimeMatch) dataMime = mimeMatch[1].toLowerCase();
+                try {
+                    blobUrl = dataUriToBlobUrl(docUrl);
+                } catch(e) {
+                    console.warn("Could not create blob URL from data URI", e);
+                }
+            }
+
+            const effectiveViewUrl = blobUrl || docUrl;
+            if (openLink) openLink.href = effectiveViewUrl;
             if (downloadLink) {
-                downloadLink.href = docUrl;
-                const fname = docUrl.split('/').pop().split('?')[0] || 'document';
+                downloadLink.href = effectiveViewUrl;
+                const fname = isDataUri ? (title.replace(/[^a-zA-Z0-9_-]/g, '_') + (dataMime.includes('pdf') ? '.pdf' : dataMime.includes('sheet') ? '.xlsx' : '')) : (docUrl.split('/').pop().split('?')[0] || 'document');
                 downloadLink.setAttribute('download', fname);
             }
 
             modal.classList.remove("hidden");
             document.body.classList.add("overflow-hidden");
 
-            const cleanUrl = docUrl.split('?')[0].split('#')[0];
-            const ext = cleanUrl.split('.').pop().toLowerCase();
-            const fileName = cleanUrl.split('/').pop();
+            const cleanUrl = isDataUri ? '' : docUrl.split('?')[0].split('#')[0];
+            const ext = isDataUri ? '' : cleanUrl.split('.').pop().toLowerCase();
+            const fileName = isDataUri ? (title || 'Uploaded Document') : (cleanUrl.split('/').pop() || 'document');
 
             if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Loading preview...`;
 
@@ -1074,14 +1116,25 @@
             `;
 
             try {
+                const isExcel = ['xlsx', 'xls', 'csv'].includes(ext) || dataMime.includes('spreadsheet') || dataMime.includes('excel') || dataMime.includes('csv');
+                const isWord = ['docx', 'doc'].includes(ext) || dataMime.includes('wordprocessing') || dataMime.includes('msword');
+                const isPdf = ext === 'pdf' || dataMime.includes('pdf') || cleanUrl.endsWith('.pdf');
+                const isImage = ['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'].includes(ext) || dataMime.startsWith('image/');
+                const isCode = ['txt', 'py', 'ipynb', 'json', 'sql', 'md', 'js', 'html', 'css'].includes(ext) || dataMime.startsWith('text/') || dataMime.includes('json');
+
                 // 1. EXCEL SPREADSHEETS (.xlsx, .xls, .csv)
-                if (['xlsx', 'xls', 'csv'].includes(ext)) {
+                if (isExcel) {
                     if (modalIcon) modalIcon.setAttribute("data-lucide", "file-spreadsheet");
                     if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Interactive Spreadsheet Table`;
 
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`Could not load spreadsheet (HTTP ${response.status})`);
-                    const arrayBuffer = await response.arrayBuffer();
+                    let arrayBuffer;
+                    if (isDataUri) {
+                        arrayBuffer = dataUriToArrayBuffer(docUrl);
+                    } else {
+                        const response = await fetch(docUrl);
+                        if (!response.ok) throw new Error(`Could not load spreadsheet (HTTP ${response.status})`);
+                        arrayBuffer = await response.arrayBuffer();
+                    }
 
                     if (typeof XLSX === 'undefined') {
                         throw new Error("Spreadsheet engine is initializing, please click again in a moment.");
@@ -1148,13 +1201,18 @@
                 }
 
                 // 2. WORD DOCUMENTS (.docx)
-                if (ext === 'docx') {
+                if (isWord) {
                     if (modalIcon) modalIcon.setAttribute("data-lucide", "file-text");
                     if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Document View`;
 
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`Could not load document (HTTP ${response.status})`);
-                    const arrayBuffer = await response.arrayBuffer();
+                    let arrayBuffer;
+                    if (isDataUri) {
+                        arrayBuffer = dataUriToArrayBuffer(docUrl);
+                    } else {
+                        const response = await fetch(docUrl);
+                        if (!response.ok) throw new Error(`Could not load document (HTTP ${response.status})`);
+                        arrayBuffer = await response.arrayBuffer();
+                    }
 
                     if (typeof mammoth !== 'undefined') {
                         const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
@@ -1168,14 +1226,15 @@
                     }
                 }
 
-                // 3. PDF DOCUMENTS (.pdf)
-                if (ext === 'pdf') {
+                // 3. PDF DOCUMENTS (.pdf or data:application/pdf)
+                if (isPdf) {
                     if (modalIcon) modalIcon.setAttribute("data-lucide", "file-text");
                     if (modalSubtitle) modalSubtitle.innerText = `${fileName} • PDF Viewer`;
 
+                    const viewSrc = blobUrl || docUrl;
                     modalBody.innerHTML = `
                         <div class="w-full h-[74vh] rounded-xl overflow-hidden border border-kepler-subtleborder bg-slate-100">
-                            <iframe src="${url}#toolbar=1" class="w-full h-full border-none" title="${title}"></iframe>
+                            <iframe src="${viewSrc}#toolbar=1" class="w-full h-full border-none" title="${title}"></iframe>
                         </div>
                     `;
                     if (window.lucide) lucide.createIcons();
@@ -1183,13 +1242,14 @@
                 }
 
                 // 4. IMAGES (.png, .jpg, .jpeg, .svg, .webp)
-                if (['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'].includes(ext)) {
+                if (isImage) {
                     if (modalIcon) modalIcon.setAttribute("data-lucide", "image");
                     if (modalSubtitle) modalSubtitle.innerText = `${fileName} • High-Res Image`;
 
+                    const imgSrc = blobUrl || docUrl;
                     modalBody.innerHTML = `
                         <div class="flex items-center justify-center p-4 max-h-[74vh] overflow-auto">
-                            <img src="${url}" alt="${title}" class="max-h-[70vh] max-w-full object-contain rounded-xl shadow-lg border border-kepler-subtleborder">
+                            <img src="${imgSrc}" alt="${title}" class="max-h-[70vh] max-w-full object-contain rounded-xl shadow-lg border border-kepler-subtleborder">
                         </div>
                     `;
                     if (window.lucide) lucide.createIcons();
@@ -1197,13 +1257,19 @@
                 }
 
                 // 5. CODE / TEXT / JUPYTER (.py, .ipynb, .json, .txt, .sql, .md)
-                if (['txt', 'py', 'ipynb', 'json', 'sql', 'md'].includes(ext)) {
+                if (isCode) {
                     if (modalIcon) modalIcon.setAttribute("data-lucide", "code");
                     if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Source View`;
 
-                    const response = await fetch(url);
-                    if (response.ok) {
-                        const text = await response.text();
+                    let text = '';
+                    if (isDataUri) {
+                        text = atob(docUrl.split(',')[1]);
+                    } else {
+                        const response = await fetch(docUrl);
+                        if (response.ok) text = await response.text();
+                    }
+
+                    if (text) {
                         const safeText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         modalBody.innerHTML = `
                             <div class="bg-kepler-black text-emerald-400 p-6 rounded-xl max-h-[72vh] overflow-auto font-mono text-xs border border-kepler-darkborder leading-relaxed">
@@ -1215,7 +1281,7 @@
                     }
                 }
 
-                // 6. EXTERNAL URL FALLBACK (Jumpshare, External links)
+                // 6. EXTERNAL CLOUD RESOURCE FALLBACK (Jumpshare, External links)
                 if (modalIcon) modalIcon.setAttribute("data-lucide", "external-link");
                 if (modalSubtitle) modalSubtitle.innerText = `External Academic Resource`;
                 modalBody.innerHTML = `
@@ -1228,11 +1294,14 @@
                             This academic deliverable is linked to an external cloud platform or service. Click below to open directly in a new window.
                         </p>
                         <div class="pt-4 flex items-center justify-center gap-3">
-                            <a href="${url}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-xl bg-kepler-orange hover:bg-kepler-orangeDark text-white font-mono text-xs font-bold transition-all flex items-center gap-2 shadow-md shadow-orange-500/20">
+                            <a href="${docUrl}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-xl bg-kepler-orange hover:bg-kepler-orangeDark text-white font-mono text-xs font-bold transition-all flex items-center gap-2 shadow-md shadow-orange-500/20">
                                 <span>Open Deliverable</span>
                                 <i data-lucide="external-link" class="w-4 h-4"></i>
                             </a>
                         </div>
+                        <p class="text-[11px] text-kepler-muted pt-2 font-mono">
+                            Tip: You can upload your PDF or DOCX file directly in the Admin Portal to render it inside this in-browser viewer.
+                        </p>
                     </div>
                 `;
                 if (window.lucide) lucide.createIcons();
@@ -1247,10 +1316,10 @@
                         <h4 class="font-bold text-base text-kepler-black">Unable to render inline viewer</h4>
                         <p class="text-xs text-kepler-muted">${err.message}</p>
                         <div class="pt-2 flex items-center justify-center gap-3">
-                            <a href="${url}" target="_blank" class="px-5 py-2.5 bg-kepler-black text-white text-xs font-mono font-bold rounded-xl hover:bg-kepler-orange transition-colors">
+                            <a href="${effectiveViewUrl}" target="_blank" class="px-5 py-2.5 bg-kepler-black text-white text-xs font-mono font-bold rounded-xl hover:bg-kepler-orange transition-colors">
                                 Open in Tab
                             </a>
-                            <a href="${url}" download class="px-5 py-2.5 bg-kepler-offwhite border border-kepler-subtleborder text-kepler-black text-xs font-mono font-bold rounded-xl hover:border-kepler-black transition-colors">
+                            <a href="${effectiveViewUrl}" download class="px-5 py-2.5 bg-kepler-offwhite border border-kepler-subtleborder text-kepler-black text-xs font-mono font-bold rounded-xl hover:border-kepler-black transition-colors">
                                 Download File
                             </a>
                         </div>
@@ -1291,10 +1360,37 @@
                     if (staticRes.ok) data = await staticRes.json();
                 } catch(err) {}
             }
-            if (!data) {
+
+            // Check localStorage for any user edits/uploads
+            let localData = null;
+            try {
                 const saved = localStorage.getItem("kepler_academic_data");
-                if (saved) {
-                    try { data = JSON.parse(saved); } catch(e) {}
+                if (saved) localData = JSON.parse(saved);
+            } catch(e) {}
+
+            // Merge local edits with server data
+            if (localData) {
+                if (!data) {
+                    data = localData;
+                } else {
+                    for (const cid in localData) {
+                        if (!data[cid]) {
+                            data[cid] = localData[cid];
+                        } else {
+                            if (localData[cid].assignments && localData[cid].assignments.length > 0) {
+                                data[cid].assignments = localData[cid].assignments;
+                            }
+                            if (localData[cid].projects && localData[cid].projects.length > 0) {
+                                data[cid].projects = localData[cid].projects;
+                            }
+                            if (localData[cid].learnings && localData[cid].learnings.length > 0) {
+                                data[cid].learnings = localData[cid].learnings;
+                            }
+                            if (localData[cid].resources && localData[cid].resources.length > 0) {
+                                data[cid].resources = localData[cid].resources;
+                            }
+                        }
+                    }
                 }
             }
             if (data) {

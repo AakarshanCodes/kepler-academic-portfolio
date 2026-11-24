@@ -696,7 +696,19 @@
             const file = fileInput.files[0];
             if (!file) return;
             const statusDiv = document.getElementById(statusDivId);
-            if (statusDiv) statusDiv.innerHTML = `<span class="text-amber-400 font-mono text-xs">⏳ Uploading ${file.name}...</span>`;
+
+            // Find parent form submit button and disable it during upload
+            const form = fileInput.closest('form');
+            const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+            let origBtnText = '';
+            if (submitBtn) {
+                origBtnText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Uploading Document... Please wait';
+                submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
+            }
+
+            if (statusDiv) statusDiv.innerHTML = `<span class="text-amber-400 font-mono text-xs animate-pulse">⏳ Uploading ${file.name} to server...</span>`;
 
             const reader = new FileReader();
             reader.onload = async function (e) {
@@ -710,15 +722,22 @@
                     const data = await res.json();
                     if (data.success) {
                         document.getElementById(targetUrlInputId).value = data.url;
-                        if (statusDiv) statusDiv.innerHTML = `<span class="text-emerald-400 font-mono text-xs font-bold">✓ Uploaded to ${data.url}</span>`;
+                        if (statusDiv) statusDiv.innerHTML = `<span class="text-emerald-400 font-mono text-xs font-bold">✓ Uploaded to server: ${data.url}</span>`;
                     } else {
-                        alert("Upload failed: " + data.error);
-                        if (statusDiv) statusDiv.innerText = "Upload failed";
+                        console.warn("Server upload failed, using local fallback:", data.error);
+                        document.getElementById(targetUrlInputId).value = e.target.result;
+                        if (statusDiv) statusDiv.innerHTML = `<span class="text-amber-400 font-mono text-xs">✓ Saved locally as embedded document</span>`;
                     }
                 } catch (err) {
                     console.warn("Server upload failed, using local fallback", err);
                     document.getElementById(targetUrlInputId).value = e.target.result;
-                    if (statusDiv) statusDiv.innerHTML = `<span class="text-emerald-400 font-mono text-xs">✓ Stored locally: ${file.name}</span>`;
+                    if (statusDiv) statusDiv.innerHTML = `<span class="text-amber-400 font-mono text-xs">✓ Saved locally as embedded document</span>`;
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = origBtnText;
+                        submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+                    }
                 }
             };
             reader.readAsDataURL(file);
@@ -726,48 +745,74 @@
 
         // Load data from server API, localStorage or defaults
         async function loadAdminData() {
+            let data = null;
             try {
                 const res = await fetch('/api/get-data');
                 if (res.ok) {
-                    academicData = await res.json();
-                    localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
-                    if (typeof renderActiveTab === 'function') renderActiveTab();
-                    return;
+                    data = await res.json();
+                } else {
+                    const staticRes = await fetch('curriculum_data.json');
+                    if (staticRes.ok) data = await staticRes.json();
                 }
-            } catch (e) { }
-            try {
-                const staticRes = await fetch('curriculum_data.json');
-                if (staticRes.ok) {
-                    academicData = await staticRes.json();
-                    localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
-                    if (typeof renderActiveTab === 'function') renderActiveTab();
-                    return;
-                }
-            } catch (e) { }
-            const saved = localStorage.getItem("kepler_academic_data");
-            if (saved) {
+            } catch (e) {
                 try {
-                    academicData = JSON.parse(saved);
-                } catch (e) {
-                    console.error("Error reading saved data", e);
-                    academicData = DEFAULT_REAL_COURSES;
-                }
-            } else {
-                academicData = DEFAULT_REAL_COURSES;
-                localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
+                    const staticRes = await fetch('curriculum_data.json');
+                    if (staticRes.ok) data = await staticRes.json();
+                } catch(err) {}
             }
+
+            // Check localStorage
+            let localData = null;
+            try {
+                const saved = localStorage.getItem("kepler_academic_data");
+                if (saved) localData = JSON.parse(saved);
+            } catch(e) {}
+
+            if (localData) {
+                if (!data) {
+                    data = localData;
+                } else {
+                    for (const cid in localData) {
+                        if (!data[cid]) data[cid] = localData[cid];
+                        else {
+                            if (localData[cid].assignments && localData[cid].assignments.length > 0) data[cid].assignments = localData[cid].assignments;
+                            if (localData[cid].projects && localData[cid].projects.length > 0) data[cid].projects = localData[cid].projects;
+                            if (localData[cid].learnings && localData[cid].learnings.length > 0) data[cid].learnings = localData[cid].learnings;
+                            if (localData[cid].resources && localData[cid].resources.length > 0) data[cid].resources = localData[cid].resources;
+                        }
+                    }
+                }
+            }
+
+            academicData = data || DEFAULT_REAL_COURSES;
+            try {
+                localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
+            } catch(e) {}
             if (typeof renderActiveTab === 'function') renderActiveTab();
         }
 
-        function persistData() {
-            localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
-            // Also sync to disk
-            fetch('/api/save-data', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(academicData)
-            }).catch(e => console.warn("API sync error", e));
+        async function persistData() {
+            let syncSuccess = false;
+            try {
+                localStorage.setItem("kepler_academic_data", JSON.stringify(academicData));
+            } catch (storageErr) {
+                console.warn("LocalStorage quota warning:", storageErr);
+            }
+
+            try {
+                const res = await fetch('/api/save-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(academicData)
+                });
+                if (res.ok) {
+                    syncSuccess = true;
+                }
+            } catch (e) {
+                console.warn("API save-data network error", e);
+            }
             window.dispatchEvent(new Event('storage'));
+            return syncSuccess;
         }
 
         // Authentication
@@ -847,6 +892,14 @@
 
         function openAssignmentModal(editIndex = -1) {
             document.getElementById("modal-assignment").classList.remove("hidden");
+            const qFileInput = document.getElementById("asg-question-file");
+            const sFileInput = document.getElementById("asg-solution-file");
+            if (qFileInput) qFileInput.value = "";
+            if (sFileInput) sFileInput.value = "";
+
+            if (!academicData[currentCourse]) academicData[currentCourse] = { assignments: [], projects: [], learnings: [], resources: [] };
+            if (!academicData[currentCourse].assignments) academicData[currentCourse].assignments = [];
+
             if (editIndex >= 0) {
                 const a = academicData[currentCourse].assignments[editIndex];
                 document.getElementById("modal-asg-title").innerText = "Edit Assignment";
@@ -860,6 +913,8 @@
                 document.getElementById("asg-weight").value = a.weight || "";
                 document.getElementById("asg-question-url").value = a.questionUrl || "";
                 document.getElementById("asg-solution-url").value = a.solutionUrl || "";
+                document.getElementById("asg-question-status").innerHTML = a.questionUrl ? `<span class="text-emerald-400 font-mono text-[11px]">Current Link/File: ${a.questionUrl.startsWith('data:') ? 'Embedded Document' : a.questionUrl}</span>` : "";
+                document.getElementById("asg-solution-status").innerHTML = a.solutionUrl ? `<span class="text-emerald-400 font-mono text-[11px]">Current Link/File: ${a.solutionUrl.startsWith('data:') ? 'Embedded Document' : a.solutionUrl}</span>` : "";
             } else {
                 document.getElementById("modal-asg-title").innerText = "Add Assignment";
                 document.getElementById("asg-edit-id").value = "-1";
@@ -872,6 +927,8 @@
                 document.getElementById("asg-weight").value = "20%";
                 document.getElementById("asg-question-url").value = "";
                 document.getElementById("asg-solution-url").value = "";
+                document.getElementById("asg-question-status").innerHTML = "";
+                document.getElementById("asg-solution-status").innerHTML = "";
             }
             if (window.lucide) lucide.createIcons();
         }
@@ -888,20 +945,26 @@
             }
         }
 
-        function saveAssignment(e) {
+        async function saveAssignment(e) {
             e.preventDefault();
             const editId = parseInt(document.getElementById("asg-edit-id").value);
+            const questionUrl = document.getElementById("asg-question-url").value.trim();
+            const solutionUrl = document.getElementById("asg-solution-url").value.trim();
+
             const asgObj = {
                 num: parseInt(document.getElementById("asg-num").value),
-                title: document.getElementById("asg-title").value,
-                desc: document.getElementById("asg-desc").value,
+                title: document.getElementById("asg-title").value.trim(),
+                desc: document.getElementById("asg-desc").value.trim(),
                 deadline: document.getElementById("asg-deadline").value,
                 status: document.getElementById("asg-status").value,
-                score: document.getElementById("asg-score").value,
-                weight: document.getElementById("asg-weight").value,
-                questionUrl: document.getElementById("asg-question-url").value || "Question_Paper.pdf",
-                solutionUrl: document.getElementById("asg-solution-url").value || null
+                score: document.getElementById("asg-score").value.trim(),
+                weight: document.getElementById("asg-weight").value.trim(),
+                questionUrl: questionUrl || "Question_Paper.pdf",
+                solutionUrl: solutionUrl || null
             };
+
+            if (!academicData[currentCourse]) academicData[currentCourse] = { assignments: [], projects: [], learnings: [], resources: [] };
+            if (!academicData[currentCourse].assignments) academicData[currentCourse].assignments = [];
 
             if (editId >= 0) {
                 academicData[currentCourse].assignments[editId] = asgObj;
@@ -909,10 +972,14 @@
                 academicData[currentCourse].assignments.push(asgObj);
             }
 
-            persistData();
+            const synced = await persistData();
             closeModal('modal-assignment');
             renderAssignmentsTable();
-            alert("Assignment successfully saved and synced to database.");
+            if (synced) {
+                alert("✓ Assignment successfully saved and synced to database!");
+            } else {
+                alert("✓ Assignment saved locally in browser storage.");
+            }
         }
 
         // ---------------------------------------------------------------------
@@ -1007,23 +1074,23 @@
             }
         }
 
-        function saveProject(e) {
+        async function saveProject(e) {
             e.preventDefault();
             const editId = parseInt(document.getElementById("proj-edit-idx").value);
-            const fileUrl = document.getElementById("proj-file-url").value;
-            const codeUrl = document.getElementById("proj-code-url").value;
-            const liveUrl = document.getElementById("proj-live").value;
+            const fileUrl = document.getElementById("proj-file-url").value.trim();
+            const codeUrl = document.getElementById("proj-code-url").value.trim();
+            const liveUrl = document.getElementById("proj-live").value.trim();
 
             const projObj = {
-                title: document.getElementById("proj-title").value,
-                subtitle: document.getElementById("proj-subtitle").value,
-                desc: document.getElementById("proj-desc").value,
-                doc: document.getElementById("proj-doc").value,
+                title: document.getElementById("proj-title").value.trim(),
+                subtitle: document.getElementById("proj-subtitle").value.trim(),
+                desc: document.getElementById("proj-desc").value.trim(),
+                doc: document.getElementById("proj-doc").value.trim(),
                 tech: document.getElementById("proj-tech").value.split(',').map(s => s.trim()).filter(Boolean),
-                image: document.getElementById("proj-image").value,
+                image: document.getElementById("proj-image").value.trim(),
                 fileUrl: fileUrl,
                 codeUrl: codeUrl,
-                github: document.getElementById("proj-github").value,
+                github: document.getElementById("proj-github").value.trim(),
                 live: liveUrl || fileUrl
             };
 
@@ -1036,10 +1103,14 @@
                 academicData[currentCourse].projects.push(projObj);
             }
 
-            persistData();
+            const synced = await persistData();
             closeModal('modal-project');
             renderProjectsGrid();
-            alert("Project successfully saved with file deliverables.");
+            if (synced) {
+                alert("✓ Project successfully saved and synced to database!");
+            } else {
+                alert("✓ Project saved locally in browser storage.");
+            }
         }
 
         // ---------------------------------------------------------------------
