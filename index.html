@@ -16,6 +16,8 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Mammoth for Word Document (.docx) In-Browser Rendering -->
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <!-- KeplerDB: Universal IndexedDB Persistence -->
+    <script src="db.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -1079,9 +1081,22 @@
             if (modalTitle) modalTitle.innerText = title;
 
             const isDataUri = docUrl.startsWith('data:');
+            const isIdb = docUrl.startsWith('idb://');
             let dataMime = '';
             let blobUrl = null;
-            if (isDataUri) {
+            let idbRecord = null;
+
+            if (isIdb && window.KeplerDB) {
+                try {
+                    idbRecord = await KeplerDB.getFile(docUrl);
+                    if (idbRecord && idbRecord.blob) {
+                        blobUrl = URL.createObjectURL(idbRecord.blob);
+                        if (idbRecord.type) dataMime = idbRecord.type.toLowerCase();
+                    }
+                } catch(e) {
+                    console.error("Error reading file from KeplerDB:", e);
+                }
+            } else if (isDataUri) {
                 const mimeMatch = docUrl.substring(0, 100).match(/^data:([^;]+);/i);
                 if (mimeMatch) dataMime = mimeMatch[1].toLowerCase();
                 try {
@@ -1091,20 +1106,20 @@
                 }
             }
 
+            const cleanUrl = isIdb ? (idbRecord ? idbRecord.name : '') : (isDataUri ? '' : docUrl.split('?')[0].split('#')[0]);
+            const ext = isIdb ? (idbRecord ? idbRecord.name.split('.').pop().toLowerCase() : '') : (isDataUri ? '' : cleanUrl.split('.').pop().toLowerCase());
+            const fileName = isIdb ? (idbRecord ? idbRecord.name : title) : (isDataUri ? (title || 'Uploaded Document') : (cleanUrl.split('/').pop() || 'document'));
+
             const effectiveViewUrl = blobUrl || docUrl;
             if (openLink) openLink.href = effectiveViewUrl;
             if (downloadLink) {
                 downloadLink.href = effectiveViewUrl;
-                const fname = isDataUri ? (title.replace(/[^a-zA-Z0-9_-]/g, '_') + (dataMime.includes('pdf') ? '.pdf' : dataMime.includes('sheet') ? '.xlsx' : '')) : (docUrl.split('/').pop().split('?')[0] || 'document');
+                const fname = isDataUri ? (title.replace(/[^a-zA-Z0-9_-]/g, '_') + (dataMime.includes('pdf') ? '.pdf' : dataMime.includes('sheet') ? '.xlsx' : '')) : fileName;
                 downloadLink.setAttribute('download', fname);
             }
 
             modal.classList.remove("hidden");
             document.body.classList.add("overflow-hidden");
-
-            const cleanUrl = isDataUri ? '' : docUrl.split('?')[0].split('#')[0];
-            const ext = isDataUri ? '' : cleanUrl.split('.').pop().toLowerCase();
-            const fileName = isDataUri ? (title || 'Uploaded Document') : (cleanUrl.split('/').pop() || 'document');
 
             if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Loading preview...`;
 
@@ -1128,7 +1143,9 @@
                     if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Interactive Spreadsheet Table`;
 
                     let arrayBuffer;
-                    if (isDataUri) {
+                    if (isIdb && idbRecord && idbRecord.blob) {
+                        arrayBuffer = await idbRecord.blob.arrayBuffer();
+                    } else if (isDataUri) {
                         arrayBuffer = dataUriToArrayBuffer(docUrl);
                     } else {
                         const response = await fetch(docUrl);
@@ -1206,7 +1223,9 @@
                     if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Document View`;
 
                     let arrayBuffer;
-                    if (isDataUri) {
+                    if (isIdb && idbRecord && idbRecord.blob) {
+                        arrayBuffer = await idbRecord.blob.arrayBuffer();
+                    } else if (isDataUri) {
                         arrayBuffer = dataUriToArrayBuffer(docUrl);
                     } else {
                         const response = await fetch(docUrl);
@@ -1262,7 +1281,9 @@
                     if (modalSubtitle) modalSubtitle.innerText = `${fileName} • Source View`;
 
                     let text = '';
-                    if (isDataUri) {
+                    if (isIdb && idbRecord && idbRecord.blob) {
+                        text = await idbRecord.blob.text();
+                    } else if (isDataUri) {
                         text = atob(docUrl.split(',')[1]);
                     } else {
                         const response = await fetch(docUrl);
@@ -1361,12 +1382,18 @@
                 } catch(err) {}
             }
 
-            // Check localStorage for any user edits/uploads
+            // Check localStorage and KeplerDB for client-side edits
             let localData = null;
             try {
                 const saved = localStorage.getItem("kepler_academic_data");
                 if (saved) localData = JSON.parse(saved);
             } catch(e) {}
+
+            if (!localData && window.KeplerDB) {
+                try {
+                    localData = await KeplerDB.getAcademicData();
+                } catch(e) {}
+            }
 
             // Merge local edits with server data
             if (localData) {
@@ -1377,54 +1404,69 @@
                         if (!data[cid]) {
                             data[cid] = localData[cid];
                         } else {
-                            if (localData[cid].assignments && localData[cid].assignments.length > 0) {
+                            if (Array.isArray(localData[cid].assignments)) {
                                 data[cid].assignments = localData[cid].assignments;
                             }
-                            if (localData[cid].projects && localData[cid].projects.length > 0) {
+                            if (Array.isArray(localData[cid].projects)) {
                                 data[cid].projects = localData[cid].projects;
                             }
-                            if (localData[cid].learnings && localData[cid].learnings.length > 0) {
+                            if (Array.isArray(localData[cid].learnings)) {
                                 data[cid].learnings = localData[cid].learnings;
                             }
-                            if (localData[cid].resources && localData[cid].resources.length > 0) {
+                            if (Array.isArray(localData[cid].resources)) {
                                 data[cid].resources = localData[cid].resources;
                             }
                         }
                     }
                 }
             }
+
             if (data) {
                 for (const cid in data) {
                     if (COURSES_DATA[cid]) {
-                        if (data[cid].assignments && data[cid].assignments.length > 0) {
-                            COURSES_DATA[cid].assignments = data[cid].assignments.map(a => ({
-                                title: a.title,
-                                desc: a.desc,
-                                status: a.status || 'Graded',
-                                score: a.score || '',
-                                url: a.questionUrl || 'https://jmp.sh/TjycFeJg'
-                            }));
-                        }
-                        if (data[cid].projects && data[cid].projects.length > 0) {
-                            const p = data[cid].projects[0];
-                            if (!COURSES_DATA[cid].project) {
-                                COURSES_DATA[cid].project = {
-                                    sectionTitle: "Mini Project",
-                                    sectionSubtitle: "Coursework Deliverable",
-                                    badge: "Mini Project Deliverable",
-                                    tech: [],
-                                    btnText: "View Mini Project"
-                                };
+                        // ASSIGNMENTS: Handle deletions cleanly
+                        if (Array.isArray(data[cid].assignments)) {
+                            if (data[cid].assignments.length > 0) {
+                                COURSES_DATA[cid].assignments = data[cid].assignments.map(a => ({
+                                    title: a.title,
+                                    desc: a.desc,
+                                    status: a.status || 'Graded',
+                                    score: a.score || '',
+                                    url: a.questionUrl || 'https://jmp.sh/TjycFeJg'
+                                }));
+                            } else {
+                                COURSES_DATA[cid].assignments = [];
                             }
-                            COURSES_DATA[cid].project.title = p.title;
-                            COURSES_DATA[cid].project.desc = p.desc;
-                            COURSES_DATA[cid].project.subtitle = p.subtitle || COURSES_DATA[cid].project.subtitle;
-                            COURSES_DATA[cid].project.tech = p.tech || COURSES_DATA[cid].project.tech || [];
-                            COURSES_DATA[cid].project.url = p.fileUrl || p.live || COURSES_DATA[cid].project.url;
-                            COURSES_DATA[cid].project.codeUrl = p.codeUrl || null;
-                            COURSES_DATA[cid].project.github = p.github || COURSES_DATA[cid].project.github;
                         }
-                        if (data[cid].resources && data[cid].resources.length > 0) {
+
+                        // PROJECTS: Handle deletions cleanly
+                        if (Array.isArray(data[cid].projects)) {
+                            if (data[cid].projects.length > 0) {
+                                const p = data[cid].projects[0];
+                                if (!COURSES_DATA[cid].project) {
+                                    COURSES_DATA[cid].project = {
+                                        sectionTitle: "Mini Project",
+                                        sectionSubtitle: "Coursework Deliverable",
+                                        badge: "Mini Project Deliverable",
+                                        tech: [],
+                                        btnText: "View Mini Project"
+                                    };
+                                }
+                                COURSES_DATA[cid].project.title = p.title;
+                                COURSES_DATA[cid].project.desc = p.desc;
+                                COURSES_DATA[cid].project.subtitle = p.subtitle || COURSES_DATA[cid].project.subtitle;
+                                COURSES_DATA[cid].project.tech = p.tech || COURSES_DATA[cid].project.tech || [];
+                                COURSES_DATA[cid].project.url = p.fileUrl || p.live || COURSES_DATA[cid].project.url;
+                                COURSES_DATA[cid].project.codeUrl = p.codeUrl || null;
+                                COURSES_DATA[cid].project.github = p.github || COURSES_DATA[cid].project.github;
+                            } else {
+                                // User deleted project for this course
+                                COURSES_DATA[cid].project = null;
+                            }
+                        }
+
+                        // CERTIFICATES: Handle deletions cleanly
+                        if (Array.isArray(data[cid].resources)) {
                             const certRes = data[cid].resources.find(r => r.category === 'Certificate' || (r.title && r.title.toLowerCase().includes('certif')));
                             if (certRes) {
                                 if (!COURSES_DATA[cid].certificates) {
@@ -1440,6 +1482,8 @@
                                     COURSES_DATA[cid].certificates.url = certRes.url;
                                     if (certRes.desc) COURSES_DATA[cid].certificates.desc = certRes.desc;
                                 }
+                            } else {
+                                COURSES_DATA[cid].certificates = null;
                             }
                         }
                     }

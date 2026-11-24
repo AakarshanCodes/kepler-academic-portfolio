@@ -167,24 +167,7 @@
         "questionUrl": "https://jmp.sh/Y2SVmx8O"
       }
     ],
-    "projects": [
-      {
-        "title": "Cloud Infrastructure & Containerization Mini Project",
-        "subtitle": "FoCC Practical Capstone",
-        "desc": "Automated multi-tier container orchestration, ingress networking, and Infrastructure as Code deployment.",
-        "tech": [
-          "Docker",
-          "Kubernetes",
-          "Linux Cgroups",
-          "Terraform",
-          "AWS"
-        ],
-        "fileUrl": "https://jmp.sh/Lxt8ZCsR",
-        "codeUrl": "",
-        "live": "https://jmp.sh/Lxt8ZCsR",
-        "github": "https://github.com/aakarshan-indori/cloud-mini-project"
-      }
-    ],
+    "projects": [],
     "learnings": [
       {
         "lecture": 1,
